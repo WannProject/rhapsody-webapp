@@ -1,0 +1,263 @@
+<!DOCTYPE html><html class="dark" lang="id" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>RHAPSODY | Home Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Design System Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "tertiary": "#ffffff",
+                "on-secondary": "#313030",
+                "tertiary-container": "#e5e2e1",
+                "on-tertiary-fixed-variant": "#474646",
+                "secondary-fixed": "#e5e2e1",
+                "on-error-container": "#ffdad6",
+                "on-background": "#e2e2e2",
+                "secondary-fixed-dim": "#c8c6c5",
+                "surface-container-low": "#1b1b1b",
+                "on-primary-container": "#636565",
+                "on-tertiary-container": "#656464",
+                "on-secondary-fixed-variant": "#474746",
+                "error-container": "#93000a",
+                "tertiary-fixed": "#e5e2e1",
+                "surface-container-high": "#2a2a2a",
+                "surface-container": "#1f1f1f",
+                "background": "#131313",
+                "on-surface": "#e2e2e2",
+                "on-tertiary-fixed": "#1c1b1b",
+                "surface-bright": "#393939",
+                "on-primary-fixed": "#1a1c1c",
+                "surface": "#131313",
+                "surface-container-highest": "#353535",
+                "secondary-container": "#474746",
+                "error": "#ffb4ab",
+                "on-error": "#690005",
+                "on-tertiary": "#313030",
+                "primary-fixed-dim": "#c6c6c7",
+                "primary-container": "#e2e2e2",
+                "inverse-on-surface": "#303030",
+                "on-primary": "#2f3131",
+                "on-primary-fixed-variant": "#454747",
+                "surface-tint": "#c6c6c7",
+                "on-surface-variant": "#c4c7c8",
+                "surface-dim": "#131313",
+                "surface-container-lowest": "#0e0e0e",
+                "primary-fixed": "#e2e2e2",
+                "on-secondary-fixed": "#1c1b1b",
+                "secondary": "#c8c6c5",
+                "primary": "#ffffff",
+                "inverse-surface": "#e2e2e2",
+                "outline-variant": "#444748",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "on-secondary-container": "#b7b5b4",
+                "inverse-primary": "#5d5f5f",
+                "outline": "#8e9192",
+                "surface-variant": "#353535"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "spacing": {
+                "gutter": "16px",
+                "margin-mobile": "16px",
+                "unit": "4px",
+                "xl": "40px",
+                "xs": "4px",
+                "margin-desktop": "48px",
+                "sm": "8px",
+                "lg": "24px",
+                "md": "16px"
+            },
+            "fontFamily": {
+                "headline-md": ["Montserrat"],
+                "display-lg": ["Montserrat"],
+                "label-sm": ["Inter"],
+                "body-md": ["Inter"],
+                "display-lg-mobile": ["Montserrat"],
+                "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            -webkit-font-smoothing: antialiased;
+        }
+        .studio-card-gradient {
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
+        }
+        .glow-active {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1A1A1A;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-background border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile h-16">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="graphic_eq">graphic_eq</span>
+<h1 class="font-headline-md text-headline-md font-bold tracking-tighter text-primary">RHAPSODY</h1>
+</div>
+<button class="hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+</header>
+<main class="pt-20 pb-32 px-margin-mobile max-w-5xl mx-auto min-h-screen">
+<!-- Welcome Message -->
+<section class="mb-lg" style="opacity: 1; transform: translateY(0px); transition: 0.4s ease-out;">
+<h2 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-primary tracking-tighter">Halo, Musisi!</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 opacity-80">Siap menciptakan mahakarya hari ini?</p>
+</section>
+<!-- Booking Status Summary (Z-1 Platter) -->
+<section class="mb-xl" style="opacity: 1; transform: translateY(0px); transition: 0.4s ease-out;">
+<div class="bg-surface-container-low border border-surface-variant p-md rounded-lg flex items-center gap-md group hover:border-primary transition-colors duration-300">
+<div class="w-12 h-12 bg-primary flex items-center justify-center rounded-sm">
+<span class="material-symbols-outlined text-on-primary" data-icon="event_available">event_available</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Booking Terdekat</p>
+<p class="font-body-lg text-body-lg font-bold text-primary">Studio A, Besok 14:00 - 16:00</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</section>
+<!-- Quick Actions -->
+<section class="grid grid-cols-2 gap-md mb-xl" style="opacity: 1; transform: translateY(0px); transition: 0.4s ease-out;">
+<button class="bg-primary text-on-primary font-label-sm text-label-sm py-lg px-md flex flex-col items-center justify-center gap-sm rounded-lg hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[28px]" data-icon="add_circle">add_circle</span>
+<span class="">Booking Sekarang</span>
+</button>
+<button class="border border-primary text-primary font-label-sm text-label-sm py-lg px-md flex flex-col items-center justify-center gap-sm rounded-lg hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined text-[28px]" data-icon="calendar_today">calendar_today</span>
+<span class="">Lihat Jadwal</span>
+</button>
+</section>
+<!-- Featured Studios -->
+<section class="mb-xl" style="opacity: 1; transform: translateY(0px); transition: 0.4s ease-out;">
+<div class="flex items-end justify-between mb-md">
+<h3 class="font-headline-md text-headline-md text-primary">Studio Kami</h3>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Lihat Semua</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Card: Studio A -->
+<div class="relative group cursor-pointer overflow-hidden rounded-lg bg-surface-container border border-surface-variant aspect-[4/5] md:aspect-[3/4]">
+<div class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700" data-alt="A high-end professional music studio featuring a majestic black grand piano under dramatic spotlighting. The room is dark with minimalist acoustic panels on the walls. The atmosphere is sophisticated, moody, and prestigious with a black and white high-contrast aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA01pD4cbHTUU7wGS4lBNNQY_U2PXG78SlK13w62UmwpNfos7iVbsoIHDKzQVVntvSFkb0mfx09U1mzdSy7kOg9PtKKsPDJ4mwkV2N4g_bQON3GY46QcpHd48UVmrUr5ni6qJxUY37Vql2R9mKPFe4xUj-gmsDDhYqr7Qtmu5QNFd6waS8XIPTh64yl3Tl_WtaH2TcY2I-ebQq6Fe-XUpAYf4BTrKVfwN7rsERWPH8hPwviIhxqtivTGbnxZtkknx9CNCjk9tW1Qoi0')"></div>
+<div class="absolute inset-0 studio-card-gradient"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<div class="flex justify-between items-end">
+<div>
+<span class="bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 inline-block">PREMIUM</span>
+<h4 class="font-body-lg text-body-lg font-extrabold text-primary">Studio A</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Grand Piano</p>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="arrow_outward">arrow_outward</span>
+</div>
+</div>
+</div>
+<!-- Card: Studio B -->
+
+<!-- Card: Studio C -->
+
+</div>
+</section>
+<!-- Activity Feed (Functional Clarity) -->
+<section class="mb-xl" style="opacity: 1; transform: translateY(0px); transition: 0.4s ease-out;">
+<h3 class="font-headline-md text-headline-md text-primary mb-md">Aktivitas Terkini</h3>
+<div class="space-y-sm">
+<div class="flex items-center gap-md py-sm border-b border-surface-variant">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="receipt_long">receipt_long</span>
+<div class="flex-grow">
+<p class="font-body-md text-body-md text-primary">Pembayaran Berhasil</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Studio A - Invoice #4210</p>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">2j yang lalu</p>
+</div>
+<div class="flex items-center gap-md py-sm border-b border-surface-variant">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="history">history</span>
+<div class="flex-grow">
+<p class="font-body-md text-body-md text-primary">Sesi Selesai</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Studio B - 2 Jam</p>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Kemarin</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile py-sm bg-background border-t border-surface-variant">
+<a class="flex flex-col items-center justify-center text-primary font-bold translate-y-[-2px] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-sm text-label-sm mt-1">Schedule</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-label-sm text-label-sm mt-1">Bookings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for cards
+        document.querySelectorAll('.cursor-pointer').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.98)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'scale(1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simple Fade-in animation on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('section');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(10px)';
+                el.style.transition = 'all 0.4s ease-out';
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RHAPSODY | Admin Simulation Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Montserrat:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }
+        .glass-panel {
+            background: #121212;
+            border: 1px solid #1A1A1A;
+            transition: border-color 0.3s ease;
+        }
+        .glass-panel:hover {
+            border-color: #ffffff;
+        }
+        .glow-active {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #353535;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#636565",
+                        "tertiary-container": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-primary-fixed-variant": "#454747",
+                        "surface": "#131313",
+                        "on-error": "#690005",
+                        "surface-container-low": "#1b1b1b",
+                        "surface-container-highest": "#353535",
+                        "outline-variant": "#444748",
+                        "primary": "#ffffff",
+                        "primary-container": "#e2e2e2",
+                        "on-primary-fixed": "#1a1c1c",
+                        "inverse-surface": "#e2e2e2",
+                        "on-surface": "#e2e2e2",
+                        "tertiary-fixed": "#e5e2e1",
+                        "primary-fixed-dim": "#c6c6c7",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "surface-container": "#1f1f1f",
+                        "on-tertiary-container": "#656464",
+                        "background": "#131313",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "surface-dim": "#131313",
+                        "secondary": "#c8c6c5",
+                        "on-secondary-container": "#b7b5b4",
+                        "on-secondary-fixed-variant": "#474746",
+                        "surface-bright": "#393939",
+                        "on-tertiary": "#313030",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "error": "#ffb4ab",
+                        "on-primary": "#2f3131",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary-container": "#474746",
+                        "inverse-on-surface": "#303030",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "surface-tint": "#c6c6c7",
+                        "on-secondary": "#313030",
+                        "on-background": "#e2e2e2",
+                        "inverse-primary": "#5d5f5f",
+                        "tertiary": "#ffffff",
+                        "surface-container-high": "#2a2a2a",
+                        "outline": "#8e9192",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface-variant": "#353535",
+                        "primary-fixed": "#e2e2e2",
+                        "on-surface-variant": "#c4c7c8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "xl": "40px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "margin-desktop": "48px"
+                    },
+                    "fontFamily": {
+                        "display-lg-mobile": ["Montserrat"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Montserrat"],
+                        "label-sm": ["Inter"],
+                        "display-lg": ["Montserrat"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-background bg-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 z-50 w-full bg-background flex justify-between items-center px-margin-mobile h-16 border-b border-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="graphic_eq">graphic_eq</span>
+<h1 class="font-headline-md text-headline-md font-bold tracking-tighter text-primary">RHAPSODY</h1>
+</div>
+<button class="hover:opacity-80 transition-opacity active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+</header>
+<main class="pt-24 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Header & Toggle Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-xl gap-md">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">ADMIN SIMULATION PANEL</p>
+<h2 class="font-headline-md text-headline-md text-primary">Laporan Hasil Simulasi</h2>
+</div>
+<!-- Algorithm Toggle -->
+<div class="flex p-1 bg-surface-container rounded-lg border border-outline-variant w-fit">
+<button class="px-lg py-sm rounded bg-primary text-on-primary font-label-sm text-label-sm transition-all duration-300" id="btn-fcfs" onclick="toggleAlgo('fcfs')">
+                    FCFS
+                </button>
+<button class="px-lg py-sm rounded text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-all duration-300" id="btn-priority" onclick="toggleAlgo('priority')">
+                    PRIORITY
+                </button>
+</div>
+</div>
+<!-- KPI Bento Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md mb-xl">
+<div class="glass-panel p-md flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+<span class="font-label-sm text-label-sm text-on-surface-variant">TOTAL BOOKINGS</span>
+<span class="font-display-lg-mobile text-display-lg-mobile text-primary leading-none" id="kpi-total">1,248</span>
+</div>
+<div class="glass-panel p-md flex flex-col justify-between aspect-square md:aspect-auto md:h-32 border-l-2 border-l-error/50">
+<span class="font-label-sm text-label-sm text-on-surface-variant">CONFLICTS DETECTED</span>
+<span class="font-display-lg-mobile text-display-lg-mobile text-error leading-none" id="kpi-conflicts">12</span>
+</div>
+<div class="glass-panel p-md flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+<span class="font-label-sm text-label-sm text-on-surface-variant">BOOKINGS SERVED</span>
+<span class="font-display-lg-mobile text-display-lg-mobile text-primary leading-none" id="kpi-served">1,236</span>
+</div>
+<div class="glass-panel p-md flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+<span class="font-label-sm text-label-sm text-on-surface-variant">SLOT UTILIZATION</span>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-lg-mobile text-display-lg-mobile text-primary leading-none" id="kpi-util">94</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">%</span>
+</div>
+</div>
+</div>
+<!-- Main Analysis Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-xl items-start mb-xl">
+<!-- Comparison Chart Container -->
+<div class="lg:col-span-2 glass-panel p-lg">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-label-sm text-label-sm text-primary tracking-widest">PERBANDINGAN ALGORITMA</h3>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 bg-primary"></div>
+<span class="text-[10px] text-on-surface-variant">FCFS</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 border border-outline"></div>
+<span class="text-[10px] text-on-surface-variant">PRIORITY</span>
+</div>
+</div>
+</div>
+<!-- Simple Visual Data Bars (Simulating Charts) -->
+<div class="space-y-xl">
+<div>
+<div class="flex justify-between mb-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jumlah Bentrok (Lower is Better)</span>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center gap-md">
+<span class="w-16 font-label-sm text-[10px] text-on-surface-variant">FCFS</span>
+<div class="h-2 flex-grow bg-surface-container-highest">
+<div class="h-full bg-primary" style="width: 85%"></div>
+</div>
+<span class="w-8 font-label-sm text-label-sm">48</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="w-16 font-label-sm text-[10px] text-on-surface-variant">PRIORITY</span>
+<div class="h-2 flex-grow bg-surface-container-highest">
+<div class="h-full bg-primary" style="width: 25%"></div>
+</div>
+<span class="w-8 font-label-sm text-label-sm">12</span>
+</div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Utilisasi Slot (Higher is Better)</span>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center gap-md">
+<span class="w-16 font-label-sm text-[10px] text-on-surface-variant">FCFS</span>
+<div class="h-2 flex-grow bg-surface-container-highest">
+<div class="h-full bg-primary" style="width: 78%"></div>
+</div>
+<span class="w-8 font-label-sm text-label-sm">78%</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="w-16 font-label-sm text-[10px] text-on-surface-variant">PRIORITY</span>
+<div class="h-2 flex-grow bg-surface-container-highest">
+<div class="h-full bg-primary" style="width: 94%"></div>
+</div>
+<span class="w-8 font-label-sm text-label-sm">94%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Parameters Side Panel -->
+<div class="glass-panel p-lg">
+<h3 class="font-label-sm text-label-sm text-primary tracking-widest mb-lg">SIMULATION DATASET</h3>
+<div class="space-y-md">
+<div class="border-b border-surface-variant pb-sm">
+<p class="text-[10px] text-on-surface-variant uppercase mb-xs">Sample Size</p>
+<p class="font-label-sm text-label-sm">5,000 Permintaan Booking</p>
+</div>
+<div class="border-b border-surface-variant pb-sm">
+<p class="text-[10px] text-on-surface-variant uppercase mb-xs">Periode Waktu</p>
+<p class="font-label-sm text-label-sm">30 Hari Operasional</p>
+</div>
+<div class="border-b border-surface-variant pb-sm">
+<p class="text-[10px] text-on-surface-variant uppercase mb-xs">Variabel Prioritas</p>
+<p class="font-label-sm text-label-sm">Studio Tier, User Loyalty, Duration</p>
+</div>
+<div class="border-b border-surface-variant pb-sm">
+<p class="text-[10px] text-on-surface-variant uppercase mb-xs">Studio Capacity</p>
+<p class="font-label-sm text-label-sm">12 Studio Rooms (All Tiers)</p>
+</div>
+</div>
+<button class="w-full mt-xl py-md border border-primary text-primary font-label-sm text-label-sm hover:bg-primary hover:text-background transition-all">
+                    UNDUH LAPORAN LENGKAP (.PDF)
+                </button>
+</div>
+</div>
+<!-- Management Actions -->
+<section>
+<h3 class="font-label-sm text-label-sm text-on-surface-variant mb-md">NAVIGASI ADMIN</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<a class="glass-panel p-lg flex items-center justify-between group" href="#">
+<div class="flex items-center gap-md">
+<div class="p-sm bg-surface-container group-hover:bg-primary group-hover:text-background transition-colors">
+<span class="material-symbols-outlined" data-icon="apartment">apartment</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-primary">Kelola Studio</p>
+<p class="text-[10px] text-on-surface-variant">Update ketersediaan dan tier studio</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</a>
+<a class="glass-panel p-lg flex items-center justify-between group" href="#">
+<div class="flex items-center gap-md">
+<div class="p-sm bg-surface-container group-hover:bg-primary group-hover:text-background transition-colors">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-primary">Sesuaikan Kriteria Prioritas</p>
+<p class="text-[10px] text-on-surface-variant">Ubah bobot penilaian penjadwalan</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile py-sm bg-background border-t border-surface-variant">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-sm text-label-sm">Schedule</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-label-sm text-label-sm">Bookings</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary font-bold translate-y-[-2px] transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="person" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</button>
+</nav>
+<script>
+        function toggleAlgo(type) {
+            const btnFcfs = document.getElementById('btn-fcfs');
+            const btnPriority = document.getElementById('btn-priority');
+            
+            const kpiTotal = document.getElementById('kpi-total');
+            const kpiConflicts = document.getElementById('kpi-conflicts');
+            const kpiServed = document.getElementById('kpi-served');
+            const kpiUtil = document.getElementById('kpi-util');
+
+            if (type === 'fcfs') {
+                btnFcfs.className = 'px-lg py-sm rounded bg-primary text-on-primary font-label-sm text-label-sm transition-all duration-300';
+                btnPriority.className = 'px-lg py-sm rounded text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-all duration-300';
+                
+                // Update KPI for FCFS
+                updateCounter(kpiTotal, 1248);
+                updateCounter(kpiConflicts, 48, true);
+                updateCounter(kpiServed, 1200);
+                updateCounter(kpiUtil, 78);
+            } else {
+                btnPriority.className = 'px-lg py-sm rounded bg-primary text-on-primary font-label-sm text-label-sm transition-all duration-300';
+                btnFcfs.className = 'px-lg py-sm rounded text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-all duration-300';
+                
+                // Update KPI for Priority
+                updateCounter(kpiTotal, 1248);
+                updateCounter(kpiConflicts, 12, true);
+                updateCounter(kpiServed, 1236);
+                updateCounter(kpiUtil, 94);
+            }
+        }
+
+        function updateCounter(el, target, isConflict = false) {
+            let current = parseInt(el.innerText.replace(/,/g, ''));
+            const duration = 500;
+            const step = (target - current) / (duration / 16);
+            
+            const animate = () => {
+                current += step;
+                if ((step > 0 && current >= target) || (step < 0 && current <= target)) {
+                    el.innerText = target.toLocaleString();
+                    return;
+                }
+                el.innerText = Math.round(current).toLocaleString();
+                requestAnimationFrame(animate);
+            };
+            
+            // Visual feedback
+            el.classList.add('opacity-50');
+            setTimeout(() => {
+                el.classList.remove('opacity-50');
+                animate();
+            }, 50);
+        }
+    </script>
+</body></html>

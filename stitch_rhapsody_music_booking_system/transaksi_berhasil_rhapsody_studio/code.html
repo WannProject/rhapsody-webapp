@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transaksi Berhasil | RHAPSODY</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#454747",
+                    "inverse-primary": "#5d5f5f",
+                    "secondary-container": "#474746",
+                    "on-tertiary": "#313030",
+                    "primary": "#ffffff",
+                    "surface-container-highest": "#353535",
+                    "surface-container": "#1f1f1f",
+                    "surface-dim": "#131313",
+                    "surface-container-lowest": "#0e0e0e",
+                    "tertiary-container": "#e5e2e1",
+                    "on-secondary": "#313030",
+                    "secondary-fixed": "#e5e2e1",
+                    "on-background": "#e2e2e2",
+                    "on-surface": "#e2e2e2",
+                    "on-secondary-container": "#b7b5b4",
+                    "on-primary": "#2f3131",
+                    "secondary": "#c8c6c5",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-surface-variant": "#c4c7c8",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-primary-container": "#636565",
+                    "inverse-on-surface": "#303030",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "tertiary": "#ffffff",
+                    "surface": "#131313",
+                    "on-primary-fixed": "#1a1c1c",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e2e2e2",
+                    "on-tertiary-container": "#656464",
+                    "surface-bright": "#393939",
+                    "primary-fixed-dim": "#c6c6c7",
+                    "surface-container-low": "#1b1b1b",
+                    "tertiary-fixed": "#e5e2e1",
+                    "background": "#131313",
+                    "surface-container-high": "#2a2a2a",
+                    "primary-container": "#e2e2e2",
+                    "outline-variant": "#444748",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-error": "#690005",
+                    "outline": "#8e9192",
+                    "surface-variant": "#353535",
+                    "inverse-surface": "#e2e2e2",
+                    "error": "#ffb4ab",
+                    "error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "surface-tint": "#c6c6c7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "margin-mobile": "16px",
+                    "xl": "40px",
+                    "lg": "24px",
+                    "unit": "4px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "margin-desktop": "48px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Montserrat"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Montserrat"],
+                    "display-lg-mobile": ["Montserrat"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .success-glow {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .qr-border-scan::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #ffffff;
+            animation: scanning 3s infinite linear;
+        }
+        @keyframes scanning {
+            0% { top: 0; opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- Top Navigation Shell - Suppressed for Success Screen as per UX Goal -->
+<!-- Content starts here -->
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile py-xl md:px-margin-desktop bg-background">
+<div class="max-w-md w-full flex flex-col items-center">
+<!-- Success Icon & Heading -->
+<div class="mb-xl text-center space-y-sm">
+<div class="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center mx-auto mb-md success-glow">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'wght' 600">check</span>
+</div>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg uppercase tracking-tighter">
+                    Transaksi Berhasil
+                </h1>
+<p class="font-body-md text-on-surface-variant max-w-xs mx-auto">
+                    Pemesanan studio Anda telah dikonfirmasi dan jadwal telah dipesan.
+                </p>
+</div>
+<!-- QR Code Section -->
+<div class="w-full bg-surface-container rounded-xl p-lg border border-outline-variant mb-lg relative overflow-hidden">
+<div class="flex flex-col items-center">
+<div class="relative p-xs bg-primary rounded-lg mb-md">
+<img class="w-40 h-40" data-alt="A high-contrast, minimalist QR code rendered in pure black and white on a clean white surface. The aesthetic is sharp and digital, fitting a high-performance recording studio environment. The lighting is flat and studio-grade to ensure maximum legibility against the deep black background of the UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAv0zWMqFbcCzzBSSGL4KKGexGH4hTlUF8CSPmdE6IwIU2ghdEx4jFuVyqfmQXtg5npyUIjQFpwBb-Ug2F92DReCvO3Pywh8n3WQyHAAxgK0ac_NDU6VcEbcAUZvwTfvwt8O-m23ppwfpis-HVU7XPgEk3725IhVw_VddOBNdezNsyl4LIMC-I63n_oYcyqhvL-p7WWQiQttKJmWa6zbWnLbImJPx8_hZ7EWQqjYBpbwOc9rCpgPar5s4LW7s8S6FWBtUbjsEej_Tpp"/>
+<div class="absolute inset-0 qr-border-scan pointer-events-none opacity-20"></div>
+</div>
+<p class="font-label-sm text-on-surface-variant text-center max-w-[200px]">
+                        Tunjukkan QR ini kepada staff studio untuk verifikasi.
+                    </p>
+</div>
+</div>
+<!-- Booking Details Card -->
+<div class="w-full bg-surface-container rounded-xl border border-outline-variant divide-y divide-outline-variant mb-xl">
+<div class="p-md flex justify-between items-center">
+<span class="font-label-sm text-on-surface-variant uppercase tracking-widest">No. Booking</span>
+<span class="font-body-md font-bold text-primary">#RH-20231024-001</span>
+</div>
+<div class="p-md space-y-xs">
+<div class="flex justify-between items-start">
+<span class="font-label-sm text-on-surface-variant uppercase tracking-widest">Waktu Booking</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-body-md text-primary">Oct 24, 2023</span>
+<span class="font-body-md font-bold text-primary">11:00 - 13:00 (Studio A)</span>
+</div>
+</div>
+<div class="p-md flex justify-between items-center">
+<span class="font-label-sm text-on-surface-variant uppercase tracking-widest">Nama Pemesan</span>
+<span class="font-body-md text-primary">John Doe</span>
+</div>
+<div class="p-md flex justify-between items-center">
+<span class="font-label-sm text-on-surface-variant uppercase tracking-widest">Nomor Telepon</span>
+<span class="font-body-md text-primary">+62 812-3456-7890</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="w-full space-y-md">
+<div class="flex flex-col items-center gap-sm">
+<button class="w-full h-14 bg-primary text-background font-headline-md rounded-lg flex items-center justify-center gap-sm hover:opacity-90 transition-opacity active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined">download</span>
+                        Simpan Bukti Transaksi
+                    </button>
+<p class="font-label-sm text-on-surface-variant">
+                        Salinan PDF telah dikirim ke email terdaftar.
+                    </p>
+</div>
+<button class="w-full h-14 border border-primary text-primary font-headline-md rounded-lg flex items-center justify-center gap-sm hover:bg-surface-container-high transition-colors active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined">chat</span>
+                    WA Admin
+                </button>
+<div class="pt-md text-center">
+<a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors border-b border-transparent hover:border-primary pb-1" href="#">
+                        Kembali ke Halaman Utama
+                    </a>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Spacing for mobile safe areas -->
+<div class="h-8 md:hidden"></div>
+<script>
+        // Micro-interaction: Button hover logic and simple console feedback
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const label = this.innerText.trim();
+                console.log(`Action triggered: ${label}`);
+                
+                // Add a temporary ripple-like effect visual
+                const circle = document.createElement('span');
+                const x = e.clientX - e.target.offsetLeft;
+                const y = e.clientY - e.target.offsetTop;
+                
+                circle.style.left = x + 'px';
+                circle.style.top = y + 'px';
+                this.appendChild(circle);
+                
+                setTimeout(() => {
+                    circle.remove();
+                }, 500);
+            });
+        });
+
+        // Subtle background "breathing" effect for the success icon
+        const icon = document.querySelector('.success-glow');
+        let scale = 1;
+        let growing = true;
+
+        function animate() {
+            if (growing) {
+                scale += 0.002;
+                if (scale >= 1.05) growing = false;
+            } else {
+                scale -= 0.002;
+                if (scale <= 1) growing = true;
+            }
+            icon.style.transform = `scale(${scale})`;
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body></html>

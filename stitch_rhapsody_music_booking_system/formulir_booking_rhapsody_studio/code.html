@@ -1,0 +1,260 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Rhapsody - Studio Booking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Montserrat:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#ffffff",
+                    "on-secondary": "#313030",
+                    "tertiary-container": "#e5e2e1",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "secondary-fixed": "#e5e2e1",
+                    "on-error-container": "#ffdad6",
+                    "on-background": "#e2e2e2",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "surface-container-low": "#1b1b1b",
+                    "on-primary-container": "#636565",
+                    "on-tertiary-container": "#656464",
+                    "on-secondary-fixed-variant": "#474746",
+                    "error-container": "#93000a",
+                    "tertiary-fixed": "#e5e2e1",
+                    "surface-container-high": "#2a2a2a",
+                    "surface-container": "#1f1f1f",
+                    "background": "#131313",
+                    "on-surface": "#e2e2e2",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "surface-bright": "#393939",
+                    "on-primary-fixed": "#1a1c1c",
+                    "surface": "#131313",
+                    "surface-container-highest": "#353535",
+                    "secondary-container": "#474746",
+                    "error": "#ffb4ab",
+                    "on-error": "#690005",
+                    "on-tertiary": "#313030",
+                    "primary-fixed-dim": "#c6c6c7",
+                    "primary-container": "#e2e2e2",
+                    "inverse-on-surface": "#303030",
+                    "on-primary": "#2f3131",
+                    "on-primary-fixed-variant": "#454747",
+                    "surface-tint": "#c6c6c7",
+                    "on-surface-variant": "#c4c7c8",
+                    "surface-dim": "#131313",
+                    "surface-container-lowest": "#0e0e0e",
+                    "primary-fixed": "#e2e2e2",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "secondary": "#c8c6c5",
+                    "primary": "#ffffff",
+                    "inverse-surface": "#e2e2e2",
+                    "outline-variant": "#444748",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "on-secondary-container": "#b7b5b4",
+                    "inverse-primary": "#5d5f5f",
+                    "outline": "#8e9192",
+                    "surface-variant": "#353535"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "xl": "40px",
+                    "xs": "4px",
+                    "margin-desktop": "48px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Montserrat"],
+                    "display-lg": ["Montserrat"],
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg-mobile": ["Montserrat"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .form-input-focus:focus {
+            outline: none;
+            border-color: #ffffff !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #353535;
+        }
+    </style>
+</head>
+<body class="bg-black custom-scrollbar">
+<!-- TopAppBar -->
+<header class="bg-background dark:bg-background border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile h-16 fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary dark:text-primary hover:opacity-80 transition-opacity cursor-pointer active:scale-95 transition-transform">graphic_eq</span>
+<h1 class="font-headline-md text-headline-md font-bold tracking-tighter text-primary dark:text-primary">RHAPSODY</h1>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-primary dark:text-primary hover:opacity-80 transition-opacity cursor-pointer active:scale-95 transition-transform">notifications</span>
+</div>
+</header>
+<main class="pt-20 pb-32 px-margin-mobile max-w-2xl mx-auto">
+<!-- Selected Studio Summary -->
+<section class="mb-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div class="bg-[#121212] border border-[#1A1A1A] p-md flex gap-md items-center">
+<div class="w-20 h-20 bg-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover grayscale brightness-75 contrast-125" data-alt="A cinematic, high-contrast photograph of a professional music recording studio interior. The room is dominated by deep blacks and dark wood textures, featuring a large mixing console with glowing white LEDs. Acoustic foam panels create a rhythmic pattern on the walls. The atmosphere is professional, moody, and sophisticated, perfectly aligned with a high-performance audio brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB47P6HVD8OkbAwoUUX_bImpOW1o-T-6ZOXuNvAIY0OZNdhpxPEzQeisu5J41ebqllJR6cRrdTyPU8NsVN2dkNDu91SoHixP0nz9GfrWSqBiACX2Ueay_wrlhCFGYZ0Bu3KzTLwDbU87ZXqcqL3yaHGLk0SH6Uw_4iMcj2FycPOCS2Ti_yFCyPrK-Tf-Us_LFd7ChWCSaYMiapoj_Yexj7Tp9dm4TL627P264zsOJ2J70hJ2uR54DX47ltFHfTJO5qZR0AHNEyh4Fqy">
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">SELECTED STUDIO</span>
+<h2 class="font-headline-md text-headline-md text-white">Studio Alpha — Pro</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">24 Nov, 14:00 - 16:00 WIB</p>
+</div>
+</div>
+</section>
+<!-- Main Form -->
+<form class="space-y-lg">
+<!-- Customer Identity -->
+<div class="space-y-md">
+<div class="group">
+<label class="font-label-sm text-label-sm text-on-surface-variant mb-2 block uppercase tracking-wider">Nama Pelanggan</label>
+<input class="w-full bg-[#121212] border border-[#1A1A1A] px-md py-3 text-white font-body-md form-input-focus transition-all duration-300" placeholder="Masukkan nama lengkap" type="text">
+</div>
+<div class="group">
+<label class="font-label-sm text-label-sm text-on-surface-variant mb-2 block uppercase tracking-wider">No. HP</label>
+<input class="w-full bg-[#121212] border border-[#1A1A1A] px-md py-3 text-white font-body-md form-input-focus transition-all duration-300" placeholder="+62 8xx xxxx xxxx" type="tel">
+</div>
+</div>
+<!-- Priority Criteria -->
+<div class="pt-lg border-t border-[#1A1A1A] space-y-md">
+<div class="flex items-center justify-between">
+<h3 class="font-label-sm text-label-sm text-white uppercase tracking-widest">Priority Criteria</h3>
+<div class="flex items-center bg-[#121212] border border-[#1A1A1A] p-1">
+<button class="px-4 py-1 text-xs font-bold transition-all bg-white text-black" id="btn-member" onclick="toggleMember(true)" type="button">MEMBER</button>
+<button class="px-4 py-1 text-xs font-bold transition-all text-on-surface-variant" id="btn-nonmember" onclick="toggleMember(false)" type="button">NON-MEMBER</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="font-label-sm text-label-sm text-on-surface-variant mb-2 block uppercase tracking-wider">Activity Type</label>
+<div class="relative">
+<select class="w-full bg-[#121212] border border-[#1A1A1A] px-md py-3 text-white font-body-md appearance-none form-input-focus">
+<option>Latihan</option>
+<option>Recording</option>
+<option>Kursus</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+
+</div>
+<!-- System Note -->
+<div class="flex gap-3 bg-[#121212] p-md border-l-2 border-white">
+<span class="material-symbols-outlined text-primary text-xl">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant italic">
+                        Prioritas digunakan untuk optimasi penjadwalan jika terjadi bentrok.
+                    </p>
+</div>
+</div>
+<!-- Submit Action -->
+<div class="pt-xl">
+<button class="w-full bg-white text-black py-4 font-headline-md text-headline-md font-bold hover:bg-opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-md" type="submit">
+                    BOOKING NOW !<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</form>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile py-sm bg-background border-t border-surface-variant">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-sm text-label-sm">Schedule</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary font-bold translate-y-[-2px] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="font-label-sm text-label-sm">Bookings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</a>
+</nav>
+<script>
+        function toggleMember(isMember) {
+            const btnMember = document.getElementById('btn-member');
+            const btnNonMember = document.getElementById('btn-nonmember');
+            
+            if (isMember) {
+                btnMember.classList.add('bg-white', 'text-black');
+                btnMember.classList.remove('text-on-surface-variant');
+                btnNonMember.classList.remove('bg-white', 'text-black');
+                btnNonMember.classList.add('text-on-surface-variant');
+            } else {
+                btnNonMember.classList.add('bg-white', 'text-black');
+                btnNonMember.classList.remove('text-on-surface-variant');
+                btnMember.classList.remove('bg-white', 'text-black');
+                btnMember.classList.add('text-on-surface-variant');
+            }
+        }
+
+        // Micro-interaction for input highlighting
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('focus', () => {
+                el.parentElement.querySelector('label').classList.replace('text-on-surface-variant', 'text-white');
+            });
+            el.addEventListener('blur', () => {
+                el.parentElement.querySelector('label').classList.replace('text-white', 'text-on-surface-variant');
+            });
+        });
+
+        // Urgency button selector logic
+        const urgencyBtns = document.querySelectorAll('button[type="button"].flex-1');
+        urgencyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                urgencyBtns.forEach(b => b.classList.replace('border-white', 'border-[#1A1A1A]'));
+                btn.classList.replace('border-[#1A1A1A]', 'border-white');
+            });
+        });
+    </script>
+
+
+</body></html>

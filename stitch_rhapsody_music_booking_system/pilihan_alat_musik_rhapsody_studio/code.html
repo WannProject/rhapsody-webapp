@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#1f1f1f",
+                    "on-surface-variant": "#c4c7c8",
+                    "surface-container-low": "#1b1b1b",
+                    "on-secondary": "#313030",
+                    "on-primary-fixed-variant": "#454747",
+                    "inverse-surface": "#e2e2e2",
+                    "error": "#ffb4ab",
+                    "surface-tint": "#c6c6c7",
+                    "surface": "#131313",
+                    "on-secondary-fixed-variant": "#474746",
+                    "primary-container": "#e2e2e2",
+                    "tertiary": "#ffffff",
+                    "on-primary-fixed": "#1a1c1c",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-container": "#656464",
+                    "secondary-fixed": "#e5e2e1",
+                    "primary-fixed": "#e2e2e2",
+                    "surface-bright": "#393939",
+                    "background": "#131313",
+                    "tertiary-fixed": "#e5e2e1",
+                    "outline": "#8e9192",
+                    "surface-container-highest": "#353535",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "error-container": "#93000a",
+                    "outline-variant": "#444748",
+                    "secondary-container": "#474746",
+                    "secondary": "#c8c6c5",
+                    "primary": "#ffffff",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "tertiary-container": "#e5e2e1",
+                    "surface-variant": "#353535",
+                    "on-error": "#690005",
+                    "on-error-container": "#ffdad6",
+                    "on-background": "#e2e2e2",
+                    "inverse-on-surface": "#303030",
+                    "primary-fixed-dim": "#c6c6c7",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-tertiary": "#313030",
+                    "on-primary-container": "#636565",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "on-secondary-container": "#b7b5b4",
+                    "surface-dim": "#131313",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-surface": "#e2e2e2",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "on-primary": "#2f3131",
+                    "inverse-primary": "#5d5f5f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "xl": "40px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "48px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-lg-mobile": ["Montserrat"],
+                    "display-lg": ["Montserrat"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .equipment-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .equipment-card:active {
+            transform: scale(0.98);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #444748;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #FFFFFF !important;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background selection:bg-primary selection:text-on-primary min-h-screen flex flex-col">
+<!-- Top AppBar (from Shared Components JSON) -->
+<header class="w-full top-0 sticky z-50 bg-background border-b border-outline-variant flex justify-between items-center px-margin-mobile h-16">
+<div class="flex items-center gap-4">
+<button class="hover:opacity-80 transition-opacity duration-200">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md tracking-tighter text-primary">RHAPSODY</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">person</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-margin-mobile pt-lg pb-xl max-w-2xl mx-auto w-full">
+<!-- Header Section -->
+<section class="mb-xl">
+<h2 class="font-headline-md text-headline-md-mobile text-primary mb-xs">Pilih Alat Musik</h2>
+<p class="font-body-md text-on-surface-variant">Lengkapi kebutuhan latihan Anda</p>
+</section>
+<!-- Equipment Selection List -->
+<div class="space-y-sm mb-xl">
+<!-- Drum Akustik -->
+<label class="equipment-card flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-lg cursor-pointer hover:border-primary group transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center border border-outline-variant group-hover:border-primary/50">
+<span class="material-symbols-outlined text-primary">potted_plant</span> <!-- Using placeholder for drum kit visual -->
+</div>
+<div>
+<span class="font-body-md text-primary font-semibold block">Drum Akustik</span>
+<span class="font-label-sm text-on-surface-variant uppercase tracking-wider">Premium Grade</span>
+</div>
+</div>
+<input class="w-6 h-6 rounded-none bg-transparent border-2 border-outline-variant text-primary focus:ring-0 focus:ring-offset-0 checked:bg-primary" type="checkbox"/>
+</label>
+<!-- Gitar 1 -->
+<label class="equipment-card flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-lg cursor-pointer hover:border-primary group transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center border border-outline-variant group-hover:border-primary/50">
+<span class="material-symbols-outlined text-primary">legend_toggle</span>
+</div>
+<div>
+<span class="font-body-md text-primary font-semibold block">Gitar 1</span>
+<span class="font-label-sm text-on-surface-variant uppercase tracking-wider">Electric / Acoustic</span>
+</div>
+</div>
+<input class="w-6 h-6 rounded-none bg-transparent border-2 border-outline-variant text-primary focus:ring-0 focus:ring-offset-0 checked:bg-primary" type="checkbox"/>
+</label>
+<!-- Gitar 2 -->
+<label class="equipment-card flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-lg cursor-pointer hover:border-primary group transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center border border-outline-variant group-hover:border-primary/50">
+<span class="material-symbols-outlined text-primary">legend_toggle</span>
+</div>
+<div>
+<span class="font-body-md text-primary font-semibold block">Gitar 2</span>
+<span class="font-label-sm text-on-surface-variant uppercase tracking-wider">Electric / Acoustic</span>
+</div>
+</div>
+<input class="w-6 h-6 rounded-none bg-transparent border-2 border-outline-variant text-primary focus:ring-0 focus:ring-offset-0 checked:bg-primary" type="checkbox"/>
+</label>
+<!-- Grand Piano -->
+<label class="equipment-card flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-lg cursor-pointer hover:border-primary group transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center border border-outline-variant group-hover:border-primary/50">
+<span class="material-symbols-outlined text-primary">grid_view</span>
+</div>
+<div>
+<span class="font-body-md text-primary font-semibold block">Grand Piano</span>
+<span class="font-label-sm text-on-surface-variant uppercase tracking-wider">Steinway &amp; Sons</span>
+</div>
+</div>
+<input class="w-6 h-6 rounded-none bg-transparent border-2 border-outline-variant text-primary focus:ring-0 focus:ring-offset-0 checked:bg-primary" type="checkbox"/>
+</label>
+<!-- Keyboard -->
+<label class="equipment-card flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-lg cursor-pointer hover:border-primary group transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center border border-outline-variant group-hover:border-primary/50">
+<span class="material-symbols-outlined text-primary">piano</span>
+</div>
+<div>
+<span class="font-body-md text-primary font-semibold block">Keyboard</span>
+<span class="font-label-sm text-on-surface-variant uppercase tracking-wider">Workstation</span>
+</div>
+</div>
+<input class="w-6 h-6 rounded-none bg-transparent border-2 border-outline-variant text-primary focus:ring-0 focus:ring-offset-0 checked:bg-primary" type="checkbox"/>
+</label>
+</div>
+<!-- Specialized Counter: Microphone -->
+<section class="mb-xl p-md bg-surface-container-high border border-outline-variant rounded-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-3xl">mic</span>
+<div>
+<span class="font-body-md text-primary font-bold block">Microphone</span>
+<span class="font-label-sm text-on-surface-variant">Max. 3 units included</span>
+</div>
+</div>
+<div class="flex items-center gap-lg bg-black border border-outline-variant p-xs rounded">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container-highest transition-colors" id="mic-minus">
+<span class="material-symbols-outlined text-primary">remove</span>
+</button>
+<span class="font-headline-md text-primary min-w-[20px] text-center" id="mic-count">1</span>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container-highest transition-colors" id="mic-plus">
+<span class="material-symbols-outlined text-primary">add</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Optional Input: Additional -->
+<section class="mb-xl">
+<label class="font-label-sm text-on-surface-variant uppercase tracking-widest block mb-sm" for="extra-needs">Tambahan Alat Lainnya</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-lg p-md text-primary font-body-md focus:border-primary transition-colors resize-none placeholder:text-on-surface-variant/40" id="extra-needs" placeholder="Contoh: Double pedal, Kabel jack tambahan, Kursi ekstra..." rows="3"></textarea>
+</section>
+</main>
+<!-- Fixed Action Button Footer -->
+<div class="sticky bottom-0 bg-black/90 backdrop-blur-md border-t border-outline-variant p-margin-mobile">
+<div class="max-w-2xl mx-auto flex items-center justify-between gap-lg">
+<div class="hidden sm:block">
+<span class="font-label-sm text-on-surface-variant block">TOTAL ESTIMASI</span>
+<span class="font-headline-md text-primary">Rp 250.000</span>
+</div>
+<button class="flex-grow sm:flex-grow-0 sm:min-w-[240px] h-14 bg-primary text-on-primary font-bold font-label-sm tracking-widest flex items-center justify-center gap-sm hover:opacity-90 active:scale-[0.98] transition-all">
+                LANJUT KE PEMBAYARAN
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Micro-interaction Script -->
+<script>
+        const micCountEl = document.getElementById('mic-count');
+        const micPlus = document.getElementById('mic-plus');
+        const micMinus = document.getElementById('mic-minus');
+        let count = 1;
+
+        micPlus.addEventListener('click', () => {
+            if(count < 3) {
+                count++;
+                micCountEl.textContent = count;
+                micCountEl.classList.add('scale-110');
+                setTimeout(() => micCountEl.classList.remove('scale-110'), 100);
+            }
+        });
+
+        micMinus.addEventListener('click', () => {
+            if(count > 0) {
+                count--;
+                micCountEl.textContent = count;
+                micCountEl.classList.add('scale-90');
+                setTimeout(() => micCountEl.classList.remove('scale-90'), 100);
+            }
+        });
+
+        // Toggle Visual Style on Selection
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const card = this.closest('.equipment-card');
+                if(this.checked) {
+                    card.classList.replace('bg-surface-container-low', 'bg-surface-container-highest');
+                    card.classList.add('border-primary');
+                } else {
+                    card.classList.replace('bg-surface-container-highest', 'bg-surface-container-low');
+                    card.classList.remove('border-primary');
+                }
+            });
+        });
+    </script>
+</body></html>
