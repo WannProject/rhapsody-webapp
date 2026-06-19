@@ -69,11 +69,24 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             </div>
 
                             <div className="grid gap-2">
+                                <Label htmlFor="phone">WhatsApp number</Label>
+                                <Input
+                                    id="phone"
+                                    type="tel"
+                                    tabIndex={3}
+                                    autoComplete="tel"
+                                    name="phone"
+                                    placeholder="62812xxxxxxx"
+                                />
+                                <InputError message={errors.phone} />
+                            </div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="password">Password</Label>
                                 <PasswordInput
                                     id="password"
                                     required
-                                    tabIndex={3}
+                                    tabIndex={4}
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder="Password"
@@ -89,7 +102,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
-                                    tabIndex={4}
+                                    tabIndex={5}
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Confirm password"
@@ -103,7 +116,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={5}
+                                tabIndex={6}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -125,7 +138,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                         : login()
                                 }
                                 data-test="team-invitation-login-link"
-                                tabIndex={6}
+                                tabIndex={7}
                             >
                                 Log in
                             </TextLink>
