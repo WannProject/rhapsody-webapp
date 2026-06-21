@@ -5,9 +5,11 @@ import type { Auth } from '@/types';
 export function RhapsodyBottomNav() {
     const { props, url } = usePage<{ auth: Auth }>();
     const isAuth = !!props.auth.user;
-    const visibleItems = navItems.filter(
-        (item) => isAuth || !item.authRequired,
-    );
+    const visibleItems = navItems.filter((item) => {
+        if (item.adminRequired && (!isAuth || props.auth.user?.role !== 'admin')) return false;
+        if (item.authRequired && !isAuth) return false;
+        return true;
+    });
 
     return (
         <nav className="fixed inset-x-0 bottom-0 z-40 grid border-t border-border bg-background px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] lg:hidden"

@@ -32,6 +32,7 @@ export type NavItem = {
     icon: LucideIcon;
     href: string;
     authRequired?: boolean;
+    adminRequired?: boolean;
 };
 
 export type Instrument = {

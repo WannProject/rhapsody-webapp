@@ -31,9 +31,8 @@ export const studioImages = {
 export const navItems: NavItem[] = [
     { view: 'home', label: 'Home', icon: Home, href: '/' },
     { view: 'schedule', label: 'Schedule', icon: CalendarDays, href: '/schedule' },
-    { view: 'booking', label: 'Bookings', icon: ReceiptText, href: '/booking', authRequired: true },
-    { view: 'payment', label: 'Payment', icon: CreditCard, href: '/payment', authRequired: true },
-    { view: 'admin', label: 'Admin', icon: BarChart3, href: '/reports', authRequired: true },
+    { view: 'bookings', label: 'Bookings', icon: ReceiptText, href: '/bookings', authRequired: true },
+    { view: 'reports', label: 'Reports', icon: BarChart3, href: '/reports', authRequired: true, adminRequired: true },
 ];
 
 export const studios: Studio[] = [

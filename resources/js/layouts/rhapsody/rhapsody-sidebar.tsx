@@ -6,9 +6,11 @@ import type { Auth } from '@/types';
 export function RhapsodySidebar() {
     const { props, url } = usePage<{ auth: Auth }>();
     const isAuth = !!props.auth.user;
-    const visibleItems = navItems.filter(
-        (item) => isAuth || !item.authRequired,
-    );
+    const visibleItems = navItems.filter((item) => {
+        if (item.adminRequired && (!isAuth || props.auth.user?.role !== 'admin')) return false;
+        if (item.authRequired && !isAuth) return false;
+        return true;
+    });
 
     return (
         <aside className="sticky top-0 hidden h-screen w-[280px] shrink-0 flex-col border-r border-border bg-background px-6 py-7 lg:flex">

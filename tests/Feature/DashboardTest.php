@@ -16,135 +16,91 @@ class DashboardTest extends TestCase
 
     public function test_guests_are_redirected_to_the_login_page()
     {
-        $user = User::factory()->admin()->create();
-        $team = $user->currentTeam;
-
-        $response = $this->get(route('admin.manage'));
+        $response = $this->get(route('bookings'));
         $response->assertRedirect(route('login'));
     }
 
-    public function test_authenticated_users_can_visit_the_dashboard()
+    public function test_authenticated_users_can_visit_the_bookings_page()
     {
-        $user = User::factory()->admin()->create();
-        $team = $user->currentTeam;
+        $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
-            ->get(route('admin.manage'));
-
-        $response->assertOk();
-    }
-
-    public function test_dashboard_includes_pending_invitations_for_the_authenticated_user()
-    {
-        $owner = User::factory()->admin()->create(['name' => 'Taylor Otwell']);
-        $invitedUser = User::factory()->admin()->create(['email' => 'invited@example.com']);
-        $team = Team::factory()->create(['name' => 'Laravel Team']);
-
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-
-        $invitation = TeamInvitation::factory()->create([
-            'team_id' => $team->id,
-            'email' => 'invited@example.com',
-            'invited_by' => $owner->id,
-        ]);
-
-        $response = $this
-            ->actingAs($invitedUser)
-            ->get(route('admin.manage'));
+            ->get(route('bookings'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('dashboard')
-            ->has('pendingInvitations', 1)
-            ->where('pendingInvitations.0.code', $invitation->code)
-            ->where('pendingInvitations.0.inviterName', 'Taylor Otwell')
-            ->where('pendingInvitations.0.team.name', 'Laravel Team')
-            ->where('pendingInvitations.0.team.slug', $team->slug)
-            ->missing('pendingInvitations.0.teamName'),
+            ->component('bookings/index')
+            ->has('bookings')
+            ->has('stats')
+            ->has('scheduleSlots')
+            ->has('paymentMethods'),
         );
     }
 
-    public function test_dashboard_does_not_include_accepted_invitations()
+    public function test_bookings_page_includes_is_admin_flag()
     {
-        $owner = User::factory()->admin()->create();
-        $invitedUser = User::factory()->admin()->create(['email' => 'invited@example.com']);
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->get(route('bookings'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('bookings/index')
+            ->where('isAdmin', false),
+        );
+    }
+
+    public function test_admin_sees_all_bookings()
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = User::factory()->create();
         $team = Team::factory()->create();
 
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-
-        TeamInvitation::factory()->accepted()->create([
-            'team_id' => $team->id,
-            'email' => 'invited@example.com',
-            'invited_by' => $owner->id,
-        ]);
+        $team->members()->attach($admin, ['role' => TeamRole::Owner->value]);
 
         $response = $this
-            ->actingAs($invitedUser)
-            ->get(route('admin.manage'));
+            ->actingAs($admin)
+            ->get(route('bookings'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('dashboard')
-            ->has('pendingInvitations', 0),
+            ->component('bookings/index')
+            ->where('isAdmin', true),
         );
     }
 
-    public function test_dashboard_excludes_expired_invitations_without_deleting_them()
+    public function test_admin_sees_all_payment_methods()
     {
-        $owner = User::factory()->admin()->create();
-        $invitedUser = User::factory()->admin()->create(['email' => 'invited@example.com']);
+        $admin = User::factory()->admin()->create();
         $team = Team::factory()->create();
 
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-
-        $invitation = TeamInvitation::factory()->expired()->create([
-            'team_id' => $team->id,
-            'email' => 'invited@example.com',
-            'invited_by' => $owner->id,
-        ]);
+        $team->members()->attach($admin, ['role' => TeamRole::Owner->value]);
 
         $response = $this
-            ->actingAs($invitedUser)
-            ->get(route('admin.manage'));
+            ->actingAs($admin)
+            ->get(route('bookings'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('dashboard')
-            ->has('pendingInvitations', 0),
+            ->has('allPaymentMethods'),
         );
-
-        $this->assertDatabaseHas('team_invitations', [
-            'id' => $invitation->id,
-        ]);
     }
 
-    public function test_dashboard_does_not_include_or_delete_other_users_invitations()
+    public function test_customer_does_not_see_all_payment_methods()
     {
-        $owner = User::factory()->admin()->create();
-        $invitedUser = User::factory()->admin()->create(['email' => 'invited@example.com']);
-        $team = Team::factory()->create();
-
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-
-        $invitation = TeamInvitation::factory()->expired()->create([
-            'team_id' => $team->id,
-            'email' => 'someone@example.com',
-            'invited_by' => $owner->id,
-        ]);
+        $user = User::factory()->create();
 
         $response = $this
-            ->actingAs($invitedUser)
-            ->get(route('admin.manage'));
+            ->actingAs($user)
+            ->get(route('bookings'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('dashboard')
-            ->has('pendingInvitations', 0),
+            ->has('paymentMethods')
+            ->where('isAdmin', false),
         );
-
-        $this->assertDatabaseHas('team_invitations', [
-            'id' => $invitation->id,
-        ]);
     }
 }
