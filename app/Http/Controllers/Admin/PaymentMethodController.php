@@ -21,7 +21,7 @@ class PaymentMethodController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Metode pembayaran dibuat.')]);
 
-        return to_route('dashboard');
+        return to_route('admin.manage');
     }
 
     public function update(UpdatePaymentMethodRequest $request, PaymentMethod $paymentMethod): RedirectResponse
@@ -34,7 +34,7 @@ class PaymentMethodController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Metode pembayaran diperbarui.')]);
 
-        return to_route('dashboard');
+        return to_route('admin.manage');
     }
 
     public function destroy(PaymentMethod $paymentMethod): RedirectResponse
@@ -47,6 +47,6 @@ class PaymentMethodController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Metode pembayaran dinonaktifkan.')]);
 
-        return to_route('dashboard');
+        return to_route('admin.manage');
     }
 }

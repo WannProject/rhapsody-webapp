@@ -2,8 +2,8 @@ import { createInertiaApp } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
-import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import RhapsodyLayout from '@/layouts/rhapsody-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -14,14 +14,18 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
             case name === 'dashboard':
+            case name === 'schedule/index':
+            case name === 'booking/index':
+            case name === 'payments/index':
+            case name === 'reports/index':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
             case name.startsWith('teams/'):
-                return [AppLayout, SettingsLayout];
+                return [RhapsodyLayout, SettingsLayout];
             default:
-                return AppLayout;
+                return RhapsodyLayout;
         }
     },
     strictMode: true,

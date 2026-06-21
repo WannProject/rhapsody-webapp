@@ -1,11 +1,14 @@
 import { Head } from '@inertiajs/react';
-import { RhapsodyApp } from '@/features/rhapsody/RhapsodyApp';
+import RhapsodyLayout from '@/layouts/rhapsody-layout';
+import { HomeScreen } from '@/pages/rhapsody/home-screen';
 
 export default function Welcome() {
     return (
         <>
             <Head title="RHAPSODY | Music Booking System" />
-            <RhapsodyApp />
+            <RhapsodyLayout>
+                <HomeScreen onViewChange={() => {}} />
+            </RhapsodyLayout>
         </>
     );
 }

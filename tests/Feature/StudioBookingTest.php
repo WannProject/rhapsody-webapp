@@ -18,7 +18,7 @@ class StudioBookingTest extends TestCase
 
     public function test_guests_cannot_create_bookings(): void
     {
-        $response = $this->post(route('bookings.store'), []);
+        $response = $this->post(route('booking.store'), []);
 
         $response->assertRedirect(route('login'));
     }
@@ -31,14 +31,14 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($user)
-            ->post(route('bookings.store'), [
+            ->post(route('booking.store'), [
                 'booking_date' => $bookingDate,
                 'starts_at' => '09:00',
                 'payment_method_id' => $paymentMethod->id,
                 'customer_phone' => '628123456789',
                 'notes' => 'Vokal take',
             ])
-            ->assertRedirect(route('dashboard', ['date' => $bookingDate]));
+            ->assertRedirect(route('home', ['date' => $bookingDate]));
 
         $booking = Booking::query()->firstOrFail();
 
@@ -60,14 +60,14 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($user)
-            ->patch(route('bookings.update', $booking), [
+            ->patch(route('booking.update', $booking), [
                 'booking_date' => $updatedBookingDate = now()->addDays(2)->toDateString(),
                 'starts_at' => '13:00',
                 'payment_method_id' => $paymentMethod->id,
                 'customer_phone' => '628129999999',
                 'notes' => 'Gitar take',
             ])
-            ->assertRedirect(route('dashboard', ['date' => $updatedBookingDate]));
+            ->assertRedirect(route('home', ['date' => $updatedBookingDate]));
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
@@ -78,8 +78,8 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($user)
-            ->delete(route('bookings.destroy', $booking->fresh()))
-            ->assertRedirect(route('dashboard', ['date' => $updatedBookingDate]));
+            ->delete(route('booking.destroy', $booking->fresh()))
+            ->assertRedirect(route('home', ['date' => $updatedBookingDate]));
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
@@ -111,14 +111,14 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($secondUser)
-            ->from(route('dashboard'))
-            ->post(route('bookings.store'), [
+            ->from(route('home'))
+            ->post(route('booking.store'), [
                 'booking_date' => $date,
                 'starts_at' => '10:00',
                 'payment_method_id' => $paymentMethod->id,
                 'customer_phone' => '628123456789',
             ])
-            ->assertRedirect(route('dashboard'))
+            ->assertRedirect(route('home'))
             ->assertSessionHasErrors('starts_at');
 
         $this->assertCount(1, Booking::all());
@@ -133,12 +133,12 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($admin)
-            ->patch(route('admin.bookings.update', $booking), [
+            ->patch(route('admin.booking.update', $booking), [
                 'status' => BookingStatus::Confirmed->value,
                 'payment_status' => PaymentStatus::Paid->value,
                 'admin_notes' => 'Pembayaran valid',
             ])
-            ->assertRedirect(route('dashboard', ['date' => $booking->booking_date->toDateString()]));
+            ->assertRedirect(route('admin.manage', ['date' => $booking->booking_date->toDateString()]));
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
@@ -149,8 +149,8 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($admin)
-            ->delete(route('admin.bookings.destroy', $booking->fresh()))
-            ->assertRedirect(route('dashboard', ['date' => $booking->booking_date->toDateString()]));
+            ->delete(route('admin.booking.destroy', $booking->fresh()))
+            ->assertRedirect(route('admin.manage', ['date' => $booking->booking_date->toDateString()]));
 
         $this->assertDatabaseMissing('bookings', [
             'id' => $booking->id,
@@ -183,7 +183,7 @@ class StudioBookingTest extends TestCase
                 'is_active' => '1',
                 'sort_order' => 2,
             ])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('admin.manage'));
 
         $paymentMethod = PaymentMethod::query()->firstOrFail();
 
@@ -203,7 +203,7 @@ class StudioBookingTest extends TestCase
                 'instructions' => 'Transfer lalu kirim bukti.',
                 'sort_order' => 1,
             ])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('admin.manage'));
 
         $this->assertDatabaseHas('payment_methods', [
             'id' => $paymentMethod->id,
@@ -216,7 +216,7 @@ class StudioBookingTest extends TestCase
         $this
             ->actingAs($admin)
             ->delete(route('admin.payment-methods.destroy', $paymentMethod))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('admin.manage'));
 
         $this->assertDatabaseMissing('payment_methods', [
             'id' => $paymentMethod->id,

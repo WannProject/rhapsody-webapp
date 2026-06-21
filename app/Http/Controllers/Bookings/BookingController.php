@@ -43,7 +43,7 @@ class BookingController extends Controller
         BookingWhatsApp::bookingCreated($booking);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil dibuat.')]);
 
-        return to_route('dashboard', ['date' => $booking->booking_date->toDateString()]);
+        return to_route('home', ['date' => $booking->booking_date->toDateString()]);
     }
 
     public function update(UpdateBookingRequest $request, Booking $booking, BookingSchedule $schedule): RedirectResponse
@@ -64,7 +64,7 @@ class BookingController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil diperbarui.')]);
 
-        return to_route('dashboard', ['date' => $booking->booking_date->toDateString()]);
+        return to_route('home', ['date' => $booking->booking_date->toDateString()]);
     }
 
     public function destroy(Booking $booking): RedirectResponse
@@ -80,6 +80,6 @@ class BookingController extends Controller
         BookingWhatsApp::statusChanged($booking->fresh());
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking dibatalkan.')]);
 
-        return to_route('dashboard', ['date' => $booking->booking_date->toDateString()]);
+        return to_route('home', ['date' => $booking->booking_date->toDateString()]);
     }
 }

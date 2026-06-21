@@ -1,6 +1,5 @@
 import { Head } from '@inertiajs/react';
 import AppearanceTabs from '@/components/appearance-tabs';
-import Heading from '@/components/heading';
 import { edit as editAppearance } from '@/routes/appearance';
 
 export default function Appearance() {
@@ -8,14 +7,15 @@ export default function Appearance() {
         <>
             <Head title="Appearance settings" />
 
-            <h1 className="sr-only">Appearance settings</h1>
-
-            <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title="Appearance settings"
-                    description="Update the appearance settings for your account"
-                />
+            <div className="grid gap-6">
+                <div>
+                    <h2 className="font-display text-xl font-bold text-primary">
+                        Appearance
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Update the appearance settings for your account
+                    </p>
+                </div>
                 <AppearanceTabs />
             </div>
         </>

@@ -59,7 +59,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
     }
 
     /* @chisel-passkeys */
@@ -76,7 +76,7 @@ class AuthenticationTest extends TestCase
         $jsonResponse = app(PasskeyLoginResponse::class)->toResponse($request);
 
         $this->assertSame(
-            route('dashboard', ['current_team' => $user->personalTeam()->slug]),
+            route('home'),
             $jsonResponse->getData()->redirect,
         );
     }

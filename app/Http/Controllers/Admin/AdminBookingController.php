@@ -32,7 +32,7 @@ class AdminBookingController extends Controller
         BookingWhatsApp::statusChanged($booking->fresh());
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Status booking diperbarui.')]);
 
-        return to_route('dashboard', ['date' => $booking->booking_date->toDateString()]);
+        return to_route('admin.manage', ['date' => $booking->booking_date->toDateString()]);
     }
 
     public function destroy(Booking $booking): RedirectResponse
@@ -42,6 +42,6 @@ class AdminBookingController extends Controller
         $booking->delete();
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking dihapus.')]);
 
-        return to_route('dashboard', ['date' => $date]);
+        return to_route('admin.manage', ['date' => $date]);
     }
 }

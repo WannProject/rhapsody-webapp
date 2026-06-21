@@ -34,7 +34,7 @@ export default function ConfirmPassword() {
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Password</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"

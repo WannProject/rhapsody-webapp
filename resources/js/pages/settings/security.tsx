@@ -31,12 +31,15 @@ export default function Security(props: Props) {
 
             <h1 className="sr-only">Security settings</h1>
 
-            <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title="Update password"
-                    description="Ensure your account is using a long, random password to stay secure"
-                />
+            <div className="grid gap-8">
+                <div>
+                    <h2 className="font-display text-xl font-bold text-primary">
+                        Update password
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Ensure your account is using a long, random password to stay secure
+                    </p>
+                </div>
 
                 <Form
                     {...SecurityController.update.form()}
@@ -63,7 +66,7 @@ export default function Security(props: Props) {
                     {({ errors, processing }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="current_password">
+                                <Label htmlFor="current_password" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
                                     Current password
                                 </Label>
 
@@ -80,7 +83,7 @@ export default function Security(props: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
+                                <Label htmlFor="password" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">New password</Label>
 
                                 <PasswordInput
                                     id="password"
@@ -96,7 +99,7 @@ export default function Security(props: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
+                                <Label htmlFor="password_confirmation" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
                                     Confirm password
                                 </Label>
 
