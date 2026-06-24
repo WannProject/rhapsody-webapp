@@ -12,16 +12,23 @@ class AdminUserSeeder extends Seeder
 {
     /**
      * Seed the admin account.
+     *
+     * WARNING: For production, set these environment variables:
+     * - ADMIN_EMAIL
+     * - ADMIN_PASSWORD (use a strong, unique password)
+     * - ADMIN_PHONE (optional)
+     *
+     * @see https://laravel.com/docs/11.x/seeding#running-seeders
      */
     public function run(): void
     {
         $user = User::query()->updateOrCreate(
-            ['email' => 'admin@rhapsody.test'],
+            ['email' => env('ADMIN_EMAIL', 'admin@rhapsody.test')],
             [
                 'name' => 'Rhapsody Admin',
                 'role' => UserRole::Admin,
-                'phone' => '6281234567890',
-                'password' => Hash::make('password'),
+                'phone' => env('ADMIN_PHONE', '6281234567890'),
+                'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
                 'email_verified_at' => now(),
             ],
         );

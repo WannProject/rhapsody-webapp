@@ -1,13 +1,18 @@
 import { Link, usePage } from '@inertiajs/react';
 import { BrandMark } from '@/components/rhapsody/brand-mark';
 import { navItems } from '@/lib/rhapsody-data';
+import { UserRole } from '@/types/user-role';
 import type { Auth } from '@/types';
 
 export function RhapsodySidebar() {
     const { props, url } = usePage<{ auth: Auth }>();
     const isAuth = !!props.auth.user;
     const visibleItems = navItems.filter((item) => {
-        if (item.adminRequired && (!isAuth || props.auth.user?.role !== 'admin')) return false;
+        if (
+            item.adminRequired &&
+            (!isAuth || props.auth.user?.role !== UserRole.Admin)
+        )
+            return false;
         if (item.authRequired && !isAuth) return false;
         return true;
     });

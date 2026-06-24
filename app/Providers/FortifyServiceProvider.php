@@ -7,9 +7,6 @@ use App\Actions\Fortify\CreateNewUser;
 /* @end-chisel-registration */
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
-/* @chisel-passkeys */
-use App\Http\Responses\PasskeyLoginResponse;
-/* @end-chisel-passkeys */
 /* @chisel-registration */
 use App\Http\Responses\RegisterResponse;
 /* @end-chisel-registration */
@@ -38,10 +35,6 @@ use Laravel\Fortify\Contracts\VerifyEmailResponse as VerifyEmailResponseContract
 /* @end-chisel-email-verification */
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
-/* @chisel-passkeys */
-use Laravel\Passkeys\Contracts\PasskeyLoginResponse as PasskeyLoginResponseContract;
-
-/* @end-chisel-passkeys */
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -51,9 +44,6 @@ class FortifyServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
-        /* @chisel-passkeys */
-        $this->app->singleton(PasskeyLoginResponseContract::class, PasskeyLoginResponse::class);
-        /* @end-chisel-passkeys */
         /* @chisel-registration */
         $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
         /* @end-chisel-registration */
@@ -143,16 +133,6 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
-
-        /* @chisel-passkeys */
-        RateLimiter::for('passkeys', function (Request $request) {
-            $credentialId = $request->input('credential.id');
-
-            return Limit::perMinute(10)->by(
-                ($credentialId ?: $request->session()->getId()).'|'.$request->ip(),
-            );
-        });
-        /* @end-chisel-passkeys */
     }
 
     /**

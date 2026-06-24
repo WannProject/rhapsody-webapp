@@ -2,7 +2,6 @@ import {
     Banknote,
     BarChart3,
     CalendarDays,
-    CreditCard,
     Drum,
     Home,
     Landmark,
@@ -30,9 +29,27 @@ export const studioImages = {
 
 export const navItems: NavItem[] = [
     { view: 'home', label: 'Home', icon: Home, href: '/' },
-    { view: 'schedule', label: 'Schedule', icon: CalendarDays, href: '/schedule' },
-    { view: 'bookings', label: 'Bookings', icon: ReceiptText, href: '/bookings', authRequired: true },
-    { view: 'reports', label: 'Reports', icon: BarChart3, href: '/reports', authRequired: true, adminRequired: true },
+    {
+        view: 'schedule',
+        label: 'Schedule',
+        icon: CalendarDays,
+        href: '/schedule',
+    },
+    {
+        view: 'bookings',
+        label: 'Bookings',
+        icon: ReceiptText,
+        href: '/bookings',
+        authRequired: true,
+    },
+    {
+        view: 'reports',
+        label: 'Reports',
+        icon: BarChart3,
+        href: '/reports',
+        authRequired: true,
+        adminRequired: true,
+    },
 ];
 
 export const studios: Studio[] = [
