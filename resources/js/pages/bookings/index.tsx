@@ -1,4 +1,4 @@
-import { Form, Head, router, usePage } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,28 +14,59 @@ import {
 import RhapsodyLayout from '@/layouts/rhapsody-layout';
 import type { Auth } from '@/types';
 
-type Slot = { time: string; endsAt: string; available: boolean; price: string; label: string };
+type Slot = {
+    time: string;
+    endsAt: string;
+    available: boolean;
+    price: string;
+    label: string;
+};
 type BookingItem = {
-    code: string; customerName: string; customerEmail: string;
-    customerPhone: string | null; bookingDate: string;
-    startsAt: string; endsAt: string; totalPrice: number;
-    status: string; statusLabel: string;
-    paymentStatus: string; paymentStatusLabel: string;
-    paymentMethodId: number | null; paymentMethodName: string | null;
-    notes: string | null; adminNotes: string | null;
+    code: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string | null;
+    bookingDate: string;
+    startsAt: string;
+    endsAt: string;
+    totalPrice: number;
+    status: string;
+    statusLabel: string;
+    paymentStatus: string;
+    paymentStatusLabel: string;
+    paymentMethodId: number | null;
+    paymentMethodName: string | null;
+    notes: string | null;
+    adminNotes: string | null;
 };
 type PaymentMethodItem = {
-    id: number; type: string; typeLabel: string;
-    name: string; instructions: string | null; isActive: boolean; sortOrder: number;
+    id: number;
+    type: string;
+    typeLabel: string;
+    name: string;
+    instructions: string | null;
+    isActive: boolean;
+    sortOrder: number;
 };
-type Stats = { totalBookings: number; pendingBookings: number; confirmedBookings: number; paidBookings: number };
+type Stats = {
+    totalBookings: number;
+    pendingBookings: number;
+    confirmedBookings: number;
+    paidBookings: number;
+};
 
 type Props = {
     auth: Auth;
     isAdmin: boolean;
     selectedDate: string;
     userRole: string;
-    studio: { name: string; opensAt: string; closesAt: string; slotDurationMinutes: number; hourlyRate: number };
+    studio: {
+        name: string;
+        opensAt: string;
+        closesAt: string;
+        slotDurationMinutes: number;
+        hourlyRate: number;
+    };
     scheduleSlots: Slot[];
     paymentMethods: PaymentMethodItem[];
     allPaymentMethods: PaymentMethodItem[];
@@ -64,7 +95,16 @@ const methodTypes = [
 
 export default function BookingsPage() {
     const props = usePage<Props>().props;
-    const { isAdmin, stats, bookings, scheduleSlots, paymentMethods, allPaymentMethods, selectedDate, studio, auth } = props;
+    const {
+        isAdmin,
+        stats,
+        bookings,
+        scheduleSlots,
+        paymentMethods,
+        allPaymentMethods,
+        selectedDate,
+        auth,
+    } = props;
     const availableSlots = scheduleSlots.filter((s) => s.available);
 
     return (
@@ -94,9 +134,16 @@ export default function BookingsPage() {
                             ['Terkonfirmasi', stats.confirmedBookings],
                             ['Lunas', stats.paidBookings],
                         ].map(([label, value]) => (
-                            <div key={label} className="rounded-lg border border-border bg-card p-5">
-                                <p className="text-xs font-bold tracking-[0.22em] text-muted-foreground uppercase">{label}</p>
-                                <p className="mt-3 font-display text-[32px] leading-none font-bold text-primary">{value}</p>
+                            <div
+                                key={label}
+                                className="rounded-lg border border-border bg-card p-5"
+                            >
+                                <p className="text-xs font-bold tracking-[0.22em] text-muted-foreground uppercase">
+                                    {label}
+                                </p>
+                                <p className="mt-3 font-display text-[32px] leading-none font-bold text-primary">
+                                    {value}
+                                </p>
                             </div>
                         ))}
                     </section>
@@ -105,8 +152,13 @@ export default function BookingsPage() {
                     {!isAdmin && (
                         <section className="grid gap-5">
                             <div>
-                                <h2 className="font-display text-2xl font-bold text-primary">Buat Booking</h2>
-                                <p className="mt-1 text-sm text-muted-foreground">Pilih tanggal, jam kosong, dan metode pembayaran.</p>
+                                <h2 className="font-display text-2xl font-bold text-primary">
+                                    Buat Booking
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Pilih tanggal, jam kosong, dan metode
+                                    pembayaran.
+                                </p>
                             </div>
                             <Form
                                 action="/bookings"
@@ -117,46 +169,122 @@ export default function BookingsPage() {
                                 {({ processing, errors }) => (
                                     <>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="booking_date" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Tanggal</Label>
-                                            <Input id="booking_date" name="booking_date" type="date" defaultValue={selectedDate} required />
-                                            <InputError message={errors.booking_date} />
+                                            <Label
+                                                htmlFor="booking_date"
+                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                            >
+                                                Tanggal
+                                            </Label>
+                                            <Input
+                                                id="booking_date"
+                                                name="booking_date"
+                                                type="date"
+                                                defaultValue={selectedDate}
+                                                required
+                                            />
+                                            <InputError
+                                                message={errors.booking_date}
+                                            />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Jam</Label>
+                                            <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                                Jam
+                                            </Label>
                                             <Select name="starts_at" required>
-                                                <SelectTrigger><SelectValue placeholder="Pilih jam kosong" /></SelectTrigger>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih jam kosong" />
+                                                </SelectTrigger>
                                                 <SelectContent>
                                                     {availableSlots.map((s) => (
-                                                        <SelectItem key={s.time} value={s.time}>{s.time} - {s.endsAt} ({s.price})</SelectItem>
+                                                        <SelectItem
+                                                            key={s.time}
+                                                            value={s.time}
+                                                        >
+                                                            {s.time} -{' '}
+                                                            {s.endsAt} (
+                                                            {s.price})
+                                                        </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <InputError message={errors.starts_at} />
+                                            <InputError
+                                                message={errors.starts_at}
+                                            />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Metode Bayar</Label>
-                                            <Select name="payment_method_id" required>
-                                                <SelectTrigger><SelectValue placeholder="Pilih metode" /></SelectTrigger>
+                                            <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                                Metode Bayar
+                                            </Label>
+                                            <Select
+                                                name="payment_method_id"
+                                                required
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih metode" />
+                                                </SelectTrigger>
                                                 <SelectContent>
                                                     {paymentMethods.map((m) => (
-                                                        <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                                                        <SelectItem
+                                                            key={m.id}
+                                                            value={String(m.id)}
+                                                        >
+                                                            {m.name}
+                                                        </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <InputError message={errors.payment_method_id} />
+                                            <InputError
+                                                message={
+                                                    errors.payment_method_id
+                                                }
+                                            />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="customer_phone" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">WhatsApp</Label>
-                                            <Input id="customer_phone" name="customer_phone" type="tel" defaultValue={auth.user.phone ?? ''} placeholder="62812xxxxxxx" />
-                                            <InputError message={errors.customer_phone} />
+                                            <Label
+                                                htmlFor="customer_phone"
+                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                            >
+                                                WhatsApp
+                                            </Label>
+                                            <Input
+                                                id="customer_phone"
+                                                name="customer_phone"
+                                                type="tel"
+                                                defaultValue={
+                                                    auth.user.phone ?? ''
+                                                }
+                                                placeholder="62812xxxxxxx"
+                                            />
+                                            <InputError
+                                                message={errors.customer_phone}
+                                            />
                                         </div>
                                         <div className="grid gap-2 md:col-span-2">
-                                            <Label htmlFor="notes" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Catatan</Label>
-                                            <Input id="notes" name="notes" placeholder="Contoh: recording vocal" />
-                                            <InputError message={errors.notes} />
+                                            <Label
+                                                htmlFor="notes"
+                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                            >
+                                                Catatan
+                                            </Label>
+                                            <Input
+                                                id="notes"
+                                                name="notes"
+                                                placeholder="Contoh: recording vocal"
+                                            />
+                                            <InputError
+                                                message={errors.notes}
+                                            />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <Button disabled={processing || availableSlots.length === 0} className="w-full">Booking Sekarang</Button>
+                                            <Button
+                                                disabled={
+                                                    processing ||
+                                                    availableSlots.length === 0
+                                                }
+                                                className="w-full"
+                                            >
+                                                Booking Sekarang
+                                            </Button>
                                         </div>
                                     </>
                                 )}
@@ -171,68 +299,138 @@ export default function BookingsPage() {
                                 {isAdmin ? 'Semua Booking' : 'Booking Saya'}
                             </h2>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                {isAdmin ? 'Kelola status dan pembayaran semua booking.' : 'Pantau dan kelola booking Anda.'}
+                                {isAdmin
+                                    ? 'Kelola status dan pembayaran semua booking.'
+                                    : 'Pantau dan kelola booking Anda.'}
                             </p>
                         </div>
                         {bookings.length === 0 ? (
                             <div className="rounded-lg border border-dashed border-border p-10 text-center">
-                                <p className="font-display text-lg font-semibold text-muted-foreground">Belum ada booking</p>
+                                <p className="font-display text-lg font-semibold text-muted-foreground">
+                                    Belum ada booking
+                                </p>
                             </div>
                         ) : (
                             <div className="grid gap-4">
                                 {bookings.map((b) => (
-                                    <BookingCard key={b.code} booking={b} isAdmin={isAdmin} paymentMethods={paymentMethods} />
+                                    <BookingCard
+                                        key={b.code}
+                                        booking={b}
+                                        isAdmin={isAdmin}
+                                        paymentMethods={paymentMethods}
+                                    />
                                 ))}
                             </div>
                         )}
                     </section>
 
                     {/* Payment Methods Manager (Admin) */}
-                    {isAdmin && <PaymentMethodManager allPaymentMethods={allPaymentMethods} />}
+                    {isAdmin && (
+                        <PaymentMethodManager
+                            allPaymentMethods={allPaymentMethods}
+                        />
+                    )}
                 </div>
             </RhapsodyLayout>
         </>
     );
 }
 
-function BookingCard({ booking: b, isAdmin, paymentMethods }: { booking: BookingItem; isAdmin: boolean; paymentMethods: PaymentMethodItem[] }) {
+function BookingCard({
+    booking: b,
+    isAdmin,
+    paymentMethods,
+}: {
+    booking: BookingItem;
+    isAdmin: boolean;
+    paymentMethods: PaymentMethodItem[];
+}) {
     return (
         <div className="rounded-lg border border-border bg-card p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-display text-lg font-bold text-primary">{b.code}</p>
-                        {isAdmin && <span className="text-sm text-muted-foreground">· {b.customerName}</span>}
+                        <p className="font-display text-lg font-bold text-primary">
+                            {b.code}
+                        </p>
+                        {isAdmin && (
+                            <span className="text-sm text-muted-foreground">
+                                · {b.customerName}
+                            </span>
+                        )}
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{b.bookingDate}, {b.startsAt} - {b.endsAt}</p>
-                    {b.customerPhone && <p className="text-sm text-muted-foreground">{b.customerPhone}</p>}
-                    {b.notes && <p className="mt-1 text-xs text-muted-foreground/60">"{b.notes}"</p>}
-                    {b.adminNotes && <p className="mt-1 text-xs text-muted-foreground">Admin: {b.adminNotes}</p>}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        {b.bookingDate}, {b.startsAt} - {b.endsAt}
+                    </p>
+                    {b.customerPhone && (
+                        <p className="text-sm text-muted-foreground">
+                            {b.customerPhone}
+                        </p>
+                    )}
+                    {b.notes && (
+                        <p className="mt-1 text-xs text-muted-foreground/60">
+                            "{b.notes}"
+                        </p>
+                    )}
+                    {b.adminNotes && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Admin: {b.adminNotes}
+                        </p>
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{b.statusLabel}</span>
-                    <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{b.paymentStatusLabel}</span>
-                    <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-wider text-primary-foreground uppercase">Rp {b.totalPrice.toLocaleString('id-ID')}</span>
+                    <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        {b.statusLabel}
+                    </span>
+                    <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        {b.paymentStatusLabel}
+                    </span>
+                    <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-wider text-primary-foreground uppercase">
+                        Rp {b.totalPrice.toLocaleString('id-ID')}
+                    </span>
                 </div>
             </div>
 
             {isAdmin ? (
-                <Form action={`/bookings/${b.code}`} method="patch" className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-5">
+                <Form
+                    action={`/bookings/${b.code}`}
+                    method="patch"
+                    className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-5"
+                >
                     {({ processing, errors }) => (
                         <>
                             <Select name="status" defaultValue={b.status}>
-                                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
                                 <SelectContent>
-                                    {bookingStatuses.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                                    {bookingStatuses.map(([v, l]) => (
+                                        <SelectItem key={v} value={v}>
+                                            {l}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
-                            <Select name="payment_status" defaultValue={b.paymentStatus}>
-                                <SelectTrigger><SelectValue placeholder="Bayar" /></SelectTrigger>
+                            <Select
+                                name="payment_status"
+                                defaultValue={b.paymentStatus}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Bayar" />
+                                </SelectTrigger>
                                 <SelectContent>
-                                    {paymentStatuses.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                                    {paymentStatuses.map(([v, l]) => (
+                                        <SelectItem key={v} value={v}>
+                                            {l}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
-                            <Input name="admin_notes" defaultValue={b.adminNotes ?? ''} placeholder="Catatan admin" />
+                            <Input
+                                name="admin_notes"
+                                defaultValue={b.adminNotes ?? ''}
+                                placeholder="Catatan admin"
+                            />
                             <Button disabled={processing}>Update</Button>
                             <DeleteBookingButton code={b.code} />
                             <InputError message={errors.status} />
@@ -241,29 +439,76 @@ function BookingCard({ booking: b, isAdmin, paymentMethods }: { booking: Booking
                     )}
                 </Form>
             ) : b.status === 'pending' ? (
-                <Form action={`/bookings/${b.code}`} method="patch" className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-5">
+                <Form
+                    action={`/bookings/${b.code}`}
+                    method="patch"
+                    className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-5"
+                >
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Tanggal</Label>
-                                <Input name="booking_date" type="date" defaultValue={b.bookingDate} required />
+                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Tanggal
+                                </Label>
+                                <Input
+                                    name="booking_date"
+                                    type="date"
+                                    defaultValue={b.bookingDate}
+                                    required
+                                />
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Jam</Label>
-                                <Input name="starts_at" type="time" defaultValue={b.startsAt} required />
+                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Jam
+                                </Label>
+                                <Input
+                                    name="starts_at"
+                                    type="time"
+                                    defaultValue={b.startsAt}
+                                    required
+                                />
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Bayar</Label>
-                                <Select name="payment_method_id" defaultValue={b.paymentMethodId ? String(b.paymentMethodId) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="Metode" /></SelectTrigger>
-                                    <SelectContent>{paymentMethods.filter((m) => m.isActive).map((m) => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}</SelectContent>
+                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Bayar
+                                </Label>
+                                <Select
+                                    name="payment_method_id"
+                                    defaultValue={
+                                        b.paymentMethodId
+                                            ? String(b.paymentMethodId)
+                                            : undefined
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Metode" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {paymentMethods
+                                            .filter((m) => m.isActive)
+                                            .map((m) => (
+                                                <SelectItem
+                                                    key={m.id}
+                                                    value={String(m.id)}
+                                                >
+                                                    {m.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">WA</Label>
-                                <Input name="customer_phone" defaultValue={b.customerPhone ?? ''} />
+                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                    WA
+                                </Label>
+                                <Input
+                                    name="customer_phone"
+                                    defaultValue={b.customerPhone ?? ''}
+                                />
                             </div>
-                            <div className="flex items-end"><Button disabled={processing}>Update</Button></div>
+                            <div className="flex items-end">
+                                <Button disabled={processing}>Update</Button>
+                            </div>
                             <InputError message={errors.booking_date} />
                             <InputError message={errors.starts_at} />
                         </>
@@ -272,9 +517,17 @@ function BookingCard({ booking: b, isAdmin, paymentMethods }: { booking: Booking
             ) : null}
 
             {(isAdmin || b.status === 'pending') && (
-                <Form action={`/bookings/${b.code}`} method="delete" className="mt-3">
+                <Form
+                    action={`/bookings/${b.code}`}
+                    method="delete"
+                    className="mt-3"
+                >
                     {({ processing }) => (
-                        <Button variant="outline" disabled={processing} className="w-full">
+                        <Button
+                            variant="outline"
+                            disabled={processing}
+                            className="w-full"
+                        >
                             {isAdmin ? 'Hapus Booking' : 'Batalkan Booking'}
                         </Button>
                     )}
@@ -287,51 +540,110 @@ function BookingCard({ booking: b, isAdmin, paymentMethods }: { booking: Booking
 function DeleteBookingButton({ code }: { code: string }) {
     return (
         <Form action={`/bookings/${code}`} method="delete" className="contents">
-            <Button variant="outline" type="submit">Hapus</Button>
+            <Button variant="outline" type="submit">
+                Hapus
+            </Button>
         </Form>
     );
 }
 
-function PaymentMethodManager({ allPaymentMethods }: { allPaymentMethods: PaymentMethodItem[] }) {
+function PaymentMethodManager({
+    allPaymentMethods,
+}: {
+    allPaymentMethods: PaymentMethodItem[];
+}) {
     return (
         <section className="grid gap-5">
             <div>
-                <h2 className="font-display text-2xl font-bold text-primary">Metode Pembayaran</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Atur metode pembayaran yang diterima studio.</p>
+                <h2 className="font-display text-2xl font-bold text-primary">
+                    Metode Pembayaran
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Atur metode pembayaran yang diterima studio.
+                </p>
             </div>
-            <Form action="/payment-methods" method="post" className="grid gap-3 rounded-lg border border-border bg-card p-5 md:grid-cols-5" resetOnSuccess>
+            <Form
+                action="/payment-methods"
+                method="post"
+                className="grid gap-3 rounded-lg border border-border bg-card p-5 md:grid-cols-5"
+                resetOnSuccess
+            >
                 {({ processing, errors }) => (
                     <>
                         <Select name="type" required>
-                            <SelectTrigger><SelectValue placeholder="Jenis" /></SelectTrigger>
-                            <SelectContent>{methodTypes.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Jenis" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {methodTypes.map(([v, l]) => (
+                                    <SelectItem key={v} value={v}>
+                                        {l}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
                         <Input name="name" placeholder="Nama metode" required />
                         <Input name="instructions" placeholder="Instruksi" />
-                        <Input name="sort_order" type="number" placeholder="Urutan" defaultValue={allPaymentMethods.length + 1} />
+                        <Input
+                            name="sort_order"
+                            type="number"
+                            placeholder="Urutan"
+                            defaultValue={allPaymentMethods.length + 1}
+                        />
                         <Button disabled={processing}>Tambah</Button>
                         <InputError message={errors.name} />
                     </>
                 )}
             </Form>
             {allPaymentMethods.map((m) => (
-                <Form key={m.id} action={`/payment-methods/${m.id}`} method="patch" className="grid gap-3 rounded-lg border border-border p-4 md:grid-cols-6">
+                <Form
+                    key={m.id}
+                    action={`/payment-methods/${m.id}`}
+                    method="patch"
+                    className="grid gap-3 rounded-lg border border-border p-4 md:grid-cols-6"
+                >
                     {({ processing, errors }) => (
                         <>
                             <Select name="type" defaultValue={m.type}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>{methodTypes.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {methodTypes.map(([v, l]) => (
+                                        <SelectItem key={v} value={v}>
+                                            {l}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
                             </Select>
                             <Input name="name" defaultValue={m.name} required />
-                            <Input name="instructions" defaultValue={m.instructions ?? ''} placeholder="Instruksi" />
-                            <Input name="sort_order" type="number" defaultValue={m.sortOrder} />
+                            <Input
+                                name="instructions"
+                                defaultValue={m.instructions ?? ''}
+                                placeholder="Instruksi"
+                            />
+                            <Input
+                                name="sort_order"
+                                type="number"
+                                defaultValue={m.sortOrder}
+                            />
                             <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Checkbox name="is_active" defaultChecked={m.isActive} /> Aktif
+                                <Checkbox
+                                    name="is_active"
+                                    defaultChecked={m.isActive}
+                                />{' '}
+                                Aktif
                             </label>
                             <div className="flex gap-2">
                                 <Button disabled={processing}>Simpan</Button>
-                                <Form action={`/payment-methods/${m.id}`} method="delete" className="contents">
-                                    <Button variant="outline" type="submit">Hapus</Button>
+                                <Form
+                                    action={`/payment-methods/${m.id}`}
+                                    method="delete"
+                                    className="contents"
+                                >
+                                    <Button variant="outline" type="submit">
+                                        Hapus
+                                    </Button>
                                 </Form>
                             </div>
                             <InputError message={errors.name} />
