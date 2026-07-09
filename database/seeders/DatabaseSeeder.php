@@ -2,14 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Actions\Teams\CreateTeam;
 use App\Enums\PaymentMethodType;
-use App\Enums\UserRole;
 use App\Models\PaymentMethod;
 use App\Models\StudioSetting;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -69,32 +65,9 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        $admin = User::query()->firstOrCreate(
-            ['email' => 'admin@rhapsody.test'],
-            [
-                'name' => 'Rhapsody Admin',
-                'role' => UserRole::Admin,
-                'phone' => '6281234567890',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-        );
-
-        $customer = User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'role' => UserRole::Customer,
-                'phone' => '6281234567891',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-        );
-
-        foreach ([$admin, $customer] as $user) {
-            if (! $user->personalTeam()) {
-                app(CreateTeam::class)->handle($user, $user->name."'s Team", isPersonal: true);
-            }
-        }
+        $this->call([
+            AdminUserSeeder::class,
+            CustomerUserSeeder::class,
+        ]);
     }
 }

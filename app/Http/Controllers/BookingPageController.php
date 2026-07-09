@@ -20,7 +20,7 @@ class BookingPageController extends Controller
         $studio = StudioSetting::active();
 
         $bookingsQuery = Booking::query()
-            ->with(['paymentMethod', 'user'])
+            ->with(['paymentMethod', 'user', 'payment'])
             ->latest('booking_date')
             ->latest('starts_at');
 
@@ -83,6 +83,7 @@ class BookingPageController extends Controller
                     'paymentMethodName' => $booking->paymentMethod?->name,
                     'notes' => $booking->notes,
                     'adminNotes' => $booking->admin_notes,
+                    'paymentLinkUrl' => $booking->payment?->payment_link_url,
                 ]),
             'stats' => $isAdmin
                 ? [

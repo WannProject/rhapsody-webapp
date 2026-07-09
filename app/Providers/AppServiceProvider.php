@@ -3,10 +3,15 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use App\Services\PaymentService;
+use App\Services\PlatformWalletService;
+use App\Services\XenditClient;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(XenditClient::class, fn () => XenditClient::fromConfig());
+        $this->app->singleton(PaymentService::class);
+        $this->app->singleton(PlatformWalletService::class);
     }
 
     /**
@@ -46,5 +53,11 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+
+        RateLimiter::for('withdrawals', function ($job) {
+            $key = 'withdrawals:'.$job->user()?->id;
+
+            return Limit::perHour(config('xendit.withdrawal.rate_limit_per_hour', 5))->by($key);
+        });
     }
 }

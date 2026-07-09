@@ -17,6 +17,11 @@ class BookingWhatsApp
         self::send($booking, "Update booking {$booking->code}: status booking {$booking->status->label()}, status pembayaran {$booking->payment_status->label()}.");
     }
 
+    public static function paymentPaid(Booking $booking): void
+    {
+        self::send($booking, "Pembayaran untuk booking {$booking->code} telah diterima. Status booking: {$booking->status->label()}. Terima kasih!");
+    }
+
     private static function send(Booking $booking, string $message): void
     {
         if (! $booking->customer_phone) {
