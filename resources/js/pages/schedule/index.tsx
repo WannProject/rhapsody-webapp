@@ -1,24 +1,36 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowRight, Clock3, SlidersHorizontal } from 'lucide-react';
 import RhapsodyLayout from '@/layouts/rhapsody-layout';
-import { SectionHeader } from '@/components/rhapsody/section-header';
-import { studios } from '@/lib/rhapsody-data';
 
 type ScheduleProps = {
     selectedDate: string;
-    studio: { name: string; opensAt: string; closesAt: string; slotDurationMinutes: number; hourlyRate: number };
+    studio: {
+        name: string;
+        opensAt: string;
+        closesAt: string;
+        slotDurationMinutes: number;
+        hourlyRate: number;
+    };
     scheduleSlots: Array<{
-        time: string; endsAt: string; available: boolean;
-        price: string; label: string;
+        time: string;
+        endsAt: string;
+        available: boolean;
+        price: string;
+        label: string;
         booking?: { customerName: string };
     }>;
     paymentMethods: Array<{
-        id: number; type: string; name: string; instructions: string | null; isActive: boolean;
+        id: number;
+        type: string;
+        name: string;
+        instructions: string | null;
+        isActive: boolean;
     }>;
 };
 
 export default function SchedulePage() {
-    const { selectedDate, studio, scheduleSlots } = usePage<ScheduleProps>().props;
+    const { selectedDate, studio, scheduleSlots } =
+        usePage<ScheduleProps>().props;
 
     return (
         <>
@@ -34,14 +46,19 @@ export default function SchedulePage() {
                                 Jadwal Studio
                             </h1>
                             <p className="mt-2 text-muted-foreground">
-                                {studio.name} · {studio.opensAt} - {studio.closesAt}
+                                {studio.name} · {studio.opensAt} -{' '}
+                                {studio.closesAt}
                             </p>
                         </div>
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) =>
-                                router.get('/schedule', { date: e.target.value }, { preserveScroll: true })
+                                router.get(
+                                    '/schedule',
+                                    { date: e.target.value },
+                                    { preserveScroll: true },
+                                )
                             }
                             className="h-10 rounded-lg border border-border bg-card px-4 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
@@ -80,7 +97,9 @@ export default function SchedulePage() {
                                         </div>
                                         <div className="mt-4 flex items-end justify-between gap-3">
                                             <p className="text-sm font-semibold text-primary">
-                                                {isBooked ? slot.booking?.customerName : slot.price}
+                                                {isBooked
+                                                    ? slot.booking?.customerName
+                                                    : slot.price}
                                             </p>
                                             {!isBooked && (
                                                 <ArrowRight className="size-4 text-muted-foreground" />
@@ -101,11 +120,14 @@ export default function SchedulePage() {
                                 Info Studio
                             </h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Durasi per slot: {studio.slotDurationMinutes} menit · Rp {studio.hourlyRate.toLocaleString('id-ID')} / jam
+                                Durasi per slot: {studio.slotDurationMinutes}{' '}
+                                menit · Rp{' '}
+                                {studio.hourlyRate.toLocaleString('id-ID')} /
+                                jam
                             </p>
                         </div>
                         <a
-                            href="/booking"
+                            href="/bookings"
                             className="inline-flex rounded-md bg-primary px-5 py-3 text-sm font-extrabold tracking-wide text-primary-foreground transition hover:opacity-90"
                         >
                             Booking Sekarang

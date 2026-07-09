@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PaymentMethodType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['type', 'name', 'instructions', 'is_active', 'sort_order'])]
 class PaymentMethod extends Model
 {
+    /** @use HasFactory<\Database\Factories\PaymentMethodFactory> */
+    use HasFactory;
     /**
      * @return HasMany<Booking, $this>
      */

@@ -38,6 +38,7 @@ type BookingItem = {
     paymentMethodName: string | null;
     notes: string | null;
     adminNotes: string | null;
+    paymentLinkUrl: string | null;
 };
 type PaymentMethodItem = {
     id: number;
@@ -388,12 +389,22 @@ function BookingCard({
                     <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-wider text-primary-foreground uppercase">
                         Rp {b.totalPrice.toLocaleString('id-ID')}
                     </span>
+                    {b.paymentLinkUrl && b.paymentStatus !== 'paid' && (
+                        <a
+                            href={b.paymentLinkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center rounded-md bg-green-600 px-4 py-1.5 text-[10px] font-bold tracking-wider text-white uppercase transition hover:opacity-90"
+                        >
+                            Bayar Sekarang
+                        </a>
+                    )}
                 </div>
             </div>
 
             {isAdmin ? (
                 <Form
-                    action={`/bookings/${b.code}`}
+                    action={`/bookings/${b.code}/status`}
                     method="patch"
                     className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-5"
                 >
@@ -432,7 +443,6 @@ function BookingCard({
                                 placeholder="Catatan admin"
                             />
                             <Button disabled={processing}>Update</Button>
-                            <DeleteBookingButton code={b.code} />
                             <InputError message={errors.status} />
                             <InputError message={errors.payment_status} />
                         </>
@@ -537,16 +547,6 @@ function BookingCard({
     );
 }
 
-function DeleteBookingButton({ code }: { code: string }) {
-    return (
-        <Form action={`/bookings/${code}`} method="delete" className="contents">
-            <Button variant="outline" type="submit">
-                Hapus
-            </Button>
-        </Form>
-    );
-}
-
 function PaymentMethodManager({
     allPaymentMethods,
 }: {
@@ -596,60 +596,68 @@ function PaymentMethodManager({
                 )}
             </Form>
             {allPaymentMethods.map((m) => (
-                <Form
+                <div
                     key={m.id}
-                    action={`/payment-methods/${m.id}`}
-                    method="patch"
-                    className="grid gap-3 rounded-lg border border-border p-4 md:grid-cols-6"
+                    className="rounded-lg border border-border p-4"
                 >
-                    {({ processing, errors }) => (
-                        <>
-                            <Select name="type" defaultValue={m.type}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {methodTypes.map(([v, l]) => (
-                                        <SelectItem key={v} value={v}>
-                                            {l}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Input name="name" defaultValue={m.name} required />
-                            <Input
-                                name="instructions"
-                                defaultValue={m.instructions ?? ''}
-                                placeholder="Instruksi"
-                            />
-                            <Input
-                                name="sort_order"
-                                type="number"
-                                defaultValue={m.sortOrder}
-                            />
-                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Checkbox
-                                    name="is_active"
-                                    defaultChecked={m.isActive}
-                                />{' '}
-                                Aktif
-                            </label>
-                            <div className="flex gap-2">
+                    <Form
+                        action={`/payment-methods/${m.id}`}
+                        method="patch"
+                        className="grid gap-3 md:grid-cols-6"
+                    >
+                        {({ processing, errors }) => (
+                            <>
+                                <Select name="type" defaultValue={m.type}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {methodTypes.map(([v, l]) => (
+                                            <SelectItem key={v} value={v}>
+                                                {l}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Input name="name" defaultValue={m.name} required />
+                                <Input
+                                    name="instructions"
+                                    defaultValue={m.instructions ?? ''}
+                                    placeholder="Instruksi"
+                                />
+                                <Input
+                                    name="sort_order"
+                                    type="number"
+                                    defaultValue={m.sortOrder}
+                                />
+                                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Checkbox
+                                        name="is_active"
+                                        defaultChecked={m.isActive}
+                                    />{' '}
+                                    Aktif
+                                </label>
                                 <Button disabled={processing}>Simpan</Button>
-                                <Form
-                                    action={`/payment-methods/${m.id}`}
-                                    method="delete"
-                                    className="contents"
-                                >
-                                    <Button variant="outline" type="submit">
-                                        Hapus
-                                    </Button>
-                                </Form>
-                            </div>
-                            <InputError message={errors.name} />
-                        </>
-                    )}
-                </Form>
+                                <InputError message={errors.name} />
+                            </>
+                        )}
+                    </Form>
+                    <Form
+                        action={`/payment-methods/${m.id}`}
+                        method="delete"
+                        className="mt-2"
+                    >
+                        {({ processing }) => (
+                            <Button
+                                variant="outline"
+                                disabled={processing}
+                                className="w-full"
+                            >
+                                Hapus
+                            </Button>
+                        )}
+                    </Form>
+                </div>
             ))}
         </section>
     );

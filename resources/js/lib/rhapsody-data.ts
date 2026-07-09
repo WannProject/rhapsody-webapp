@@ -8,6 +8,9 @@ import {
     Music2,
     QrCode,
     ReceiptText,
+    Users,
+    Percent,
+    Wallet,
 } from 'lucide-react';
 import type {
     Instrument,
@@ -49,6 +52,30 @@ export const navItems: NavItem[] = [
         href: '/reports',
         authRequired: true,
         adminRequired: true,
+    },
+    {
+        view: 'clients',
+        label: 'Clients',
+        icon: Users,
+        href: '/admin/clients',
+        authRequired: true,
+        superAdminRequired: true,
+    },
+    {
+        view: 'platform-fees',
+        label: 'Platform Fees',
+        icon: Percent,
+        href: '/admin/platform-fees',
+        authRequired: true,
+        superAdminRequired: true,
+    },
+    {
+        view: 'platform-wallet',
+        label: 'Platform Wallet',
+        icon: Wallet,
+        href: '/admin/platform-wallet',
+        authRequired: true,
+        superAdminRequired: true,
     },
 ];
 

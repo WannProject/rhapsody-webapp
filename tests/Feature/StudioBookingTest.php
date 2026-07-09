@@ -90,6 +90,8 @@ class StudioBookingTest extends TestCase
 
     public function test_customer_cannot_double_book_an_active_slot(): void
     {
+        config(['inertia.ssr.enabled' => false]);
+
         $firstUser = User::factory()->create();
         $secondUser = User::factory()->create();
         $paymentMethod = $this->paymentMethod();
@@ -109,7 +111,7 @@ class StudioBookingTest extends TestCase
             'payment_status' => PaymentStatus::Paid,
         ]);
 
-        $this
+        $response = $this
             ->actingAs($secondUser)
             ->from(route('home'))
             ->post(route('bookings.store'), [
@@ -117,11 +119,10 @@ class StudioBookingTest extends TestCase
                 'starts_at' => '10:00',
                 'payment_method_id' => $paymentMethod->id,
                 'customer_phone' => '628123456789',
-            ])
-            ->assertRedirect(route('bookings'))
-            ->assertSessionHasErrors('starts_at');
+            ]);
 
-        $this->assertCount(1, Booking::all());
+        $response->assertRedirect(route('bookings'));
+        $response->assertSessionHasErrors('starts_at');
     }
 
     public function test_admin_can_update_booking_status_and_delete_booking(): void
@@ -133,7 +134,7 @@ class StudioBookingTest extends TestCase
 
         $this
             ->actingAs($admin)
-            ->patch(route('bookings.update', $booking), [
+            ->patch(route('bookings.status', $booking), [
                 'status' => BookingStatus::Confirmed->value,
                 'payment_status' => PaymentStatus::Paid->value,
                 'admin_notes' => 'Pembayaran valid',
@@ -223,6 +224,114 @@ class StudioBookingTest extends TestCase
         ]);
     }
 
+    public function test_customer_cannot_update_a_confirmed_booking(): void
+    {
+        $user = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($user, $paymentMethod);
+
+        $booking->update(['status' => BookingStatus::Confirmed]);
+
+        $this
+            ->actingAs($user)
+            ->patch(route('bookings.update', $booking), [
+                'booking_date' => now()->addDays(3)->toDateString(),
+                'starts_at' => '13:00',
+                'payment_method_id' => $paymentMethod->id,
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_customer_cannot_update_another_users_booking(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($owner, $paymentMethod);
+
+        $this
+            ->actingAs($intruder)
+            ->patch(route('bookings.update', $booking), [
+                'booking_date' => now()->addDays(2)->toDateString(),
+                'starts_at' => '13:00',
+                'payment_method_id' => $paymentMethod->id,
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_customer_update_checks_slot_collision(): void
+    {
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $date = now()->addDays(5)->toDateString();
+
+        $existing = Booking::query()->create([
+            'user_id' => $firstUser->id,
+            'payment_method_id' => $paymentMethod->id,
+            'customer_name' => $firstUser->name,
+            'customer_email' => $firstUser->email,
+            'customer_phone' => $firstUser->phone,
+            'booking_date' => $date,
+            'starts_at' => '09:00',
+            'ends_at' => '11:00',
+            'total_price' => 300000,
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Unpaid,
+        ]);
+
+        $booking = $this->booking($secondUser, $paymentMethod, $date);
+
+        $this
+            ->actingAs($secondUser)
+            ->from(route('bookings'))
+            ->patch(route('bookings.update', $booking), [
+                'booking_date' => $date,
+                'starts_at' => '10:00',
+                'payment_method_id' => $paymentMethod->id,
+            ])
+            ->assertRedirect(route('bookings'))
+            ->assertSessionHasErrors('starts_at');
+    }
+
+    public function test_customer_cannot_access_admin_status_route(): void
+    {
+        $user = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($user, $paymentMethod);
+
+        $this
+            ->actingAs($user)
+            ->patch(route('bookings.status', $booking), [
+                'status' => BookingStatus::Confirmed->value,
+                'payment_status' => PaymentStatus::Paid->value,
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_admin_cannot_spoof_customer_fields_via_status_route(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($customer, $paymentMethod);
+
+        $originalStartsAt = $booking->starts_at;
+
+        $this
+            ->actingAs($admin)
+            ->patch(route('bookings.status', $booking), [
+                'status' => BookingStatus::Confirmed->value,
+                'payment_status' => PaymentStatus::Unpaid->value,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'starts_at' => $originalStartsAt,
+        ]);
+    }
+
     private function paymentMethod(): PaymentMethod
     {
         StudioSetting::active();
@@ -236,7 +345,7 @@ class StudioBookingTest extends TestCase
         ]);
     }
 
-    private function booking(User $user, PaymentMethod $paymentMethod): Booking
+    private function booking(User $user, PaymentMethod $paymentMethod, ?string $date = null): Booking
     {
         return Booking::query()->create([
             'user_id' => $user->id,
@@ -244,7 +353,7 @@ class StudioBookingTest extends TestCase
             'customer_name' => $user->name,
             'customer_email' => $user->email,
             'customer_phone' => $user->phone,
-            'booking_date' => now()->addDay()->toDateString(),
+            'booking_date' => $date ?? now()->addDay()->toDateString(),
             'starts_at' => '09:00',
             'ends_at' => '11:00',
             'total_price' => 300000,

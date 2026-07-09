@@ -4,9 +4,14 @@ export type RhapsodyView =
     | 'home'
     | 'schedule'
     | 'booking'
+    | 'bookings'
     | 'payment'
     | 'success'
-    | 'admin';
+    | 'admin'
+    | 'reports'
+    | 'clients'
+    | 'platform-fees'
+    | 'platform-wallet';
 
 export type Studio = {
     id: string;
@@ -33,6 +38,7 @@ export type NavItem = {
     href: string;
     authRequired?: boolean;
     adminRequired?: boolean;
+    superAdminRequired?: boolean;
 };
 
 export type Instrument = {

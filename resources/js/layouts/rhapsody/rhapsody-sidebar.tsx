@@ -9,6 +9,11 @@ export function RhapsodySidebar() {
     const isAuth = !!props.auth.user;
     const visibleItems = navItems.filter((item) => {
         if (
+            item.superAdminRequired &&
+            (!isAuth || props.auth.user?.role !== UserRole.SuperAdmin)
+        )
+            return false;
+        if (
             item.adminRequired &&
             (!isAuth || props.auth.user?.role !== UserRole.Admin)
         )

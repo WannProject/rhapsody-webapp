@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -15,6 +16,7 @@ use Illuminate\Support\Str;
  * @property int $id
  * @property string $code
  * @property int $user_id
+ * @property int|null $client_id
  * @property int|null $payment_method_id
  * @property string $customer_name
  * @property string $customer_email
@@ -30,10 +32,13 @@ use Illuminate\Support\Str;
  * @property Carbon|null $confirmed_at
  * @property Carbon|null $cancelled_at
  * @property-read User $user
+ * @property-read Client|null $client
  * @property-read PaymentMethod|null $paymentMethod
+ * @property-read Payment|null $payment
  */
 #[Fillable([
     'user_id',
+    'client_id',
     'payment_method_id',
     'customer_name',
     'customer_email',
@@ -74,11 +79,27 @@ class Booking extends Model
     }
 
     /**
+     * @return BelongsTo<Client, $this>
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    /**
      * @return BelongsTo<PaymentMethod, $this>
      */
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    /**
+     * @return HasOne<Payment, $this>
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
     }
 
     /**
