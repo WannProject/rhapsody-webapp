@@ -21,6 +21,11 @@ type Props = {
     teamInvitation?: TeamInvitationContext | null;
 };
 
+const demoCredentials = {
+    email: 'customer@rhapsody.test',
+    password: 'password',
+};
+
 export default function Login({
     status,
     canResetPassword,
@@ -44,6 +49,26 @@ export default function Login({
             >
                 {({ processing, errors }) => (
                     <>
+                        <div className="rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm">
+                            <div className="font-medium text-foreground">
+                                Akun demo untuk mencoba aplikasi
+                            </div>
+                            <dl className="mt-3 grid gap-2 text-muted-foreground">
+                                <div className="flex items-center justify-between gap-3">
+                                    <dt>Email</dt>
+                                    <dd className="font-mono text-foreground">
+                                        {demoCredentials.email}
+                                    </dd>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <dt>Password</dt>
+                                    <dd className="font-mono text-foreground">
+                                        {demoCredentials.password}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label
