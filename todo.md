@@ -30,43 +30,43 @@
 
 ## C. Database Migration
 
-- [ ] Buat tabel `clients` jika sistem akan mendukung multi-client/merchant.
-- [ ] Tambahkan relasi client ke user/admin client.
-- [ ] Buat tabel `xendit_sub_accounts`.
-- [ ] Buat tabel `platform_fee_rules`.
-- [ ] Buat tabel `payments`.
-- [ ] Buat tabel `platform_wallet_ledger_entries`.
-- [ ] Buat tabel `platform_withdrawals`.
-- [ ] Tambahkan enum untuk payment status:
-  - [ ] `pending`
-  - [ ] `paid`
-  - [ ] `expired`
-  - [ ] `failed`
-  - [ ] `refunded`
-- [ ] Tambahkan enum untuk split status:
-  - [ ] `pending`
-  - [ ] `succeeded`
-  - [ ] `failed`
-  - [ ] `not_applicable`
-- [ ] Tambahkan enum untuk withdrawal status:
-  - [ ] `pending`
-  - [ ] `processing`
-  - [ ] `succeeded`
-  - [ ] `failed`
-  - [ ] `cancelled`
+- [x] Buat tabel `clients` jika sistem akan mendukung multi-client/merchant.
+- [x] Tambahkan relasi client ke user/admin client.
+- [x] Buat tabel `xendit_sub_accounts`.
+- [x] Buat tabel `platform_fee_rules`.
+- [x] Buat tabel `payments`.
+- [x] Buat tabel `platform_wallet_ledger_entries`.
+- [x] Buat tabel `platform_withdrawals`.
+- [x] Tambahkan enum untuk payment status:
+  - [x] `pending`
+  - [x] `paid`
+  - [x] `expired`
+  - [x] `failed`
+  - [x] `refunded`
+- [x] Tambahkan enum untuk split status:
+  - [x] `pending`
+  - [x] `succeeded`
+  - [x] `failed`
+  - [x] `not_applicable`
+- [x] Tambahkan enum untuk withdrawal status:
+  - [x] `pending`
+  - [x] `processing`
+  - [x] `succeeded`
+  - [x] `failed`
+  - [x] `cancelled`
 
 ## D. Model dan Relasi
 
-- [ ] Buat model `Client`.
-- [ ] Buat model `XenditSubAccount`.
-- [ ] Buat model `PlatformFeeRule`.
-- [ ] Buat model `Payment`.
-- [ ] Buat model `PlatformWalletLedgerEntry`.
-- [ ] Buat model `PlatformWithdrawal`.
-- [ ] Relasikan `Client` ke `XenditSubAccount`.
-- [ ] Relasikan `Client` ke `Booking`.
-- [ ] Relasikan `Booking` ke `Payment`.
-- [ ] Relasikan `PlatformWithdrawal` ke user requester.
+- [x] Buat model `Client`.
+- [x] Buat model `XenditSubAccount`.
+- [x] Buat model `PlatformFeeRule`.
+- [x] Buat model `Payment`.
+- [x] Buat model `PlatformWalletLedgerEntry`.
+- [x] Buat model `PlatformWithdrawal`.
+- [x] Relasikan `Client` ke `XenditSubAccount`.
+- [x] Relasikan `Client` ke `Booking`.
+- [x] Relasikan `Booking` ke `Payment`.
+- [x] Relasikan `PlatformWithdrawal` ke user requester.
 
 ## E. Service Layer
 
@@ -118,18 +118,18 @@
 
 ## I. Super Admin Platform Wallet
 
-- [ ] Buat route `/admin/platform-wallet` atau `/platform-wallet` dengan middleware super admin.
-- [ ] Buat controller `PlatformWalletController`.
-- [ ] Buat page React `resources/js/pages/admin/platform-wallet/index.tsx`.
-- [ ] Tampilkan card `Available Balance`.
-- [ ] Tampilkan card `Total Platform Fee`.
-- [ ] Tampilkan card `Pending Withdrawal`.
-- [ ] Tampilkan card `Total Withdrawn`.
-- [ ] Tampilkan tabel ledger platform fee.
-- [ ] Tampilkan tabel withdrawal history.
-- [ ] Tambahkan filter tanggal dan status.
-- [ ] Tambahkan pagination.
-- [ ] Tambahkan export CSV jika dibutuhkan.
+- [x] Buat route `/admin/platform-wallet` atau `/platform-wallet` dengan middleware super admin.
+- [x] Buat controller `PlatformWalletController`.
+- [x] Buat page React `resources/js/pages/admin/platform-wallet/index.tsx`.
+- [x] Tampilkan card `Available Balance`.
+- [x] Tampilkan card `Total Platform Fee`.
+- [x] Tampilkan card `Pending Withdrawal`.
+- [x] Tampilkan card `Total Withdrawn`.
+- [x] Tampilkan tabel ledger platform fee.
+- [x] Tampilkan tabel withdrawal history.
+- [x] Tambahkan filter tanggal dan status.
+- [x] Tambahkan pagination.
+- [x] Tambahkan export CSV jika dibutuhkan.
 
 ## J. Super Admin Withdrawal
 

@@ -121,7 +121,7 @@ class StudioBookingTest extends TestCase
                 'customer_phone' => '628123456789',
             ]);
 
-        $response->assertRedirect(route('bookings'));
+        $response->assertRedirect(route('home'));
         $response->assertSessionHasErrors('starts_at');
     }
 

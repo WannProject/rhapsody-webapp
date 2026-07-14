@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\BookingStatus;
+use App\Enums\FeeType;
 use App\Enums\PaymentGatewayStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SplitStatus;
 use App\Enums\WithdrawalStatus;
 use App\Models\Booking;
+use App\Models\Client;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PlatformFeeRule;
@@ -15,9 +17,12 @@ use App\Models\PlatformWalletLedgerEntry;
 use App\Models\PlatformWithdrawal;
 use App\Models\StudioSetting;
 use App\Models\User;
+use App\Models\XenditSubAccount;
 use App\Services\PlatformWalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class XenPlatformTest extends TestCase
@@ -50,6 +55,162 @@ class XenPlatformTest extends TestCase
             ->actingAs($superAdmin)
             ->get(route('admin.platform-wallet.index'))
             ->assertOk();
+    }
+
+    public function test_xenplatform_schema_contains_required_tables_and_columns(): void
+    {
+        $tables = [
+            'clients' => ['user_id', 'status', 'verified_at'],
+            'xendit_sub_accounts' => ['client_id', 'xendit_account_id', 'status'],
+            'platform_fee_rules' => ['client_id', 'fee_type', 'percent', 'flat_amount'],
+            'payments' => ['booking_id', 'client_id', 'status', 'split_status'],
+            'platform_wallet_ledger_entries' => ['payment_id', 'platform_withdrawal_id', 'type', 'amount'],
+            'platform_withdrawals' => ['requested_by', 'amount', 'status'],
+        ];
+
+        foreach ($tables as $table => $columns) {
+            $this->assertTrue(Schema::hasColumns($table, $columns), "Missing columns on {$table}");
+        }
+
+        $this->assertTrue(Schema::hasColumn('bookings', 'client_id'));
+    }
+
+    public function test_xenplatform_models_expose_expected_relationships(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Client Studio',
+            'email' => 'client-studio@example.test',
+        ]);
+        $subAccount = XenditSubAccount::query()->create([
+            'client_id' => $client->id,
+            'xendit_account_id' => 'acc-test-001',
+        ]);
+        $booking = $this->createBookingWithPayment();
+        $booking->update(['client_id' => $client->id]);
+        $booking->payment->update(['client_id' => $client->id]);
+        $withdrawal = PlatformWithdrawal::query()->create([
+            'requested_by' => $user->id,
+            'amount' => 50000,
+            'status' => WithdrawalStatus::Pending,
+        ]);
+
+        $this->assertTrue($user->fresh()->client->is($client));
+        $this->assertTrue($client->fresh()->user->is($user));
+        $this->assertTrue($client->xenditSubAccount->is($subAccount));
+        $this->assertTrue($subAccount->client->is($client));
+        $this->assertTrue($client->bookings->first()->is($booking));
+        $this->assertTrue($client->payments->first()->is($booking->payment));
+        $this->assertTrue($booking->fresh()->payment->is($booking->payment));
+        $this->assertTrue($withdrawal->requester->is($user));
+    }
+
+    public function test_platform_wallet_filters_ledger_and_withdrawals_by_date_and_status(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+        $today = now()->toDateString();
+
+        $matchingEntry = PlatformWalletLedgerEntry::query()->create([
+            'type' => 'credit',
+            'amount' => 125000,
+            'description' => 'Matching credit',
+        ]);
+        PlatformWalletLedgerEntry::query()->create([
+            'type' => 'debit',
+            'amount' => 25000,
+            'description' => 'Different type',
+        ]);
+        $oldEntry = PlatformWalletLedgerEntry::query()->create([
+            'type' => 'credit',
+            'amount' => 50000,
+            'description' => 'Outside date range',
+        ]);
+        $oldEntry->forceFill(['created_at' => now()->subMonth()])->saveQuietly();
+
+        $matchingWithdrawal = PlatformWithdrawal::query()->create([
+            'requested_by' => $superAdmin->id,
+            'amount' => 30000,
+            'status' => WithdrawalStatus::Succeeded,
+        ]);
+        PlatformWithdrawal::query()->create([
+            'requested_by' => $superAdmin->id,
+            'amount' => 15000,
+            'status' => WithdrawalStatus::Failed,
+        ]);
+
+        $this
+            ->actingAs($superAdmin)
+            ->get(route('admin.platform-wallet.index', [
+                'type' => 'credit',
+                'withdrawal_status' => 'succeeded',
+                'from_date' => $today,
+                'to_date' => $today,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/platform-wallet/index')
+                ->where('ledgerPagination.total', 1)
+                ->where('ledgerEntries.0.id', $matchingEntry->id)
+                ->where('withdrawalPagination.total', 1)
+                ->where('withdrawals.0.id', $matchingWithdrawal->id)
+                ->where('filters.type', 'credit')
+                ->where('filters.withdrawal_status', 'succeeded'));
+    }
+
+    public function test_platform_wallet_paginates_ledger_entries(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        foreach (range(1, 21) as $index) {
+            PlatformWalletLedgerEntry::query()->create([
+                'type' => 'credit',
+                'amount' => $index * 1000,
+            ]);
+        }
+
+        $this
+            ->actingAs($superAdmin)
+            ->get(route('admin.platform-wallet.index', ['ledger_page' => 2]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('ledgerPagination.currentPage', 2)
+                ->where('ledgerPagination.lastPage', 2)
+                ->where('ledgerPagination.total', 21)
+                ->has('ledgerEntries', 1));
+    }
+
+    public function test_super_admin_can_export_filtered_platform_wallet_ledger(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+        PlatformWalletLedgerEntry::query()->create([
+            'type' => 'credit',
+            'amount' => 175000,
+            'description' => 'Included row',
+        ]);
+        PlatformWalletLedgerEntry::query()->create([
+            'type' => 'debit',
+            'amount' => 25000,
+            'description' => 'Excluded row',
+        ]);
+
+        $response = $this
+            ->actingAs($superAdmin)
+            ->get(route('admin.platform-wallet.export', ['type' => 'credit']));
+
+        $response->assertOk()->assertDownload('platform-wallet-ledger-'.now()->toDateString().'.csv');
+        $content = $response->streamedContent();
+
+        $this->assertStringContainsString('Included row', $content);
+        $this->assertStringNotContainsString('Excluded row', $content);
+    }
+
+    public function test_non_super_admin_cannot_export_platform_wallet_ledger(): void
+    {
+        $this
+            ->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.platform-wallet.export'))
+            ->assertForbidden();
     }
 
     public function test_super_admin_can_create_client(): void
@@ -108,7 +269,7 @@ class XenPlatformTest extends TestCase
     public function test_fee_type_flat_calculation(): void
     {
         $rule = PlatformFeeRule::factory()->make([
-            'fee_type' => \App\Enums\FeeType::Flat,
+            'fee_type' => FeeType::Flat,
             'flat_amount' => 5000,
             'percent' => 0,
         ]);
@@ -119,7 +280,7 @@ class XenPlatformTest extends TestCase
     public function test_fee_type_percent_calculation(): void
     {
         $rule = PlatformFeeRule::factory()->make([
-            'fee_type' => \App\Enums\FeeType::Percent,
+            'fee_type' => FeeType::Percent,
             'percent' => 2.5,
             'flat_amount' => 0,
         ]);
@@ -130,7 +291,7 @@ class XenPlatformTest extends TestCase
     public function test_fee_type_hybrid_calculation(): void
     {
         $rule = PlatformFeeRule::factory()->make([
-            'fee_type' => \App\Enums\FeeType::Hybrid,
+            'fee_type' => FeeType::Hybrid,
             'percent' => 2.0,
             'flat_amount' => 1000,
         ]);
