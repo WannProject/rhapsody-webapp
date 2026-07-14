@@ -5,8 +5,8 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PlatformFeeRuleController;
 use App\Http\Controllers\Admin\PlatformWalletController;
 use App\Http\Controllers\Admin\PlatformWithdrawalController;
-use App\Http\Controllers\Bookings\BookingController;
 use App\Http\Controllers\BookingPageController;
+use App\Http\Controllers\Bookings\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\Teams\TeamInvitationController;
@@ -15,6 +15,7 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Public pages
 Route::get('/', HomeController::class)->name('home');
@@ -38,7 +39,7 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(func
     Route::middleware(EnsureAdmin::class)->group(function () {
         Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status');
 
-        Route::get('/reports', fn () => \Inertia\Inertia::render('reports/index'))->name('reports');
+        Route::get('/reports', fn () => Inertia::render('reports/index'))->name('reports');
 
         Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
         Route::patch('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
@@ -63,6 +64,7 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(func
 
         // Platform Wallet
         Route::get('/platform-wallet', [PlatformWalletController::class, 'index'])->name('platform-wallet.index');
+        Route::get('/platform-wallet/export', [PlatformWalletController::class, 'export'])->name('platform-wallet.export');
 
         // Withdrawals
         Route::post('/platform-withdrawals', [PlatformWithdrawalController::class, 'store'])->middleware('throttle:withdrawals')->name('platform-withdrawals.store');

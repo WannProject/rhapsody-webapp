@@ -16,6 +16,11 @@ type Props = {
     teamInvitation?: TeamInvitationContext | null;
 };
 
+const demoCredentials = {
+    email: 'customer@rhapsody.test',
+    password: 'password',
+};
+
 export default function Register({ passwordRules, teamInvitation }: Props) {
     return (
         <>
@@ -35,9 +40,52 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             />
                         )}
 
+                        <div className="rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm">
+                            <div className="font-medium text-foreground">
+                                Akun demo untuk mencoba aplikasi
+                            </div>
+                            <dl className="mt-3 grid gap-2 text-muted-foreground">
+                                <div className="flex items-center justify-between gap-3">
+                                    <dt>Email</dt>
+                                    <dd className="font-mono text-foreground">
+                                        {demoCredentials.email}
+                                    </dd>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <dt>Password</dt>
+                                    <dd className="font-mono text-foreground">
+                                        {demoCredentials.password}
+                                    </dd>
+                                </div>
+                            </dl>
+                            <div className="mt-3 text-muted-foreground">
+                                Sudah punya akun demo?{' '}
+                                <TextLink
+                                    href={
+                                        teamInvitation
+                                            ? login.url({
+                                                  query: {
+                                                      invitation:
+                                                          teamInvitation.code,
+                                                  },
+                                              })
+                                            : login()
+                                    }
+                                >
+                                    Masuk di sini
+                                </TextLink>
+                                .
+                            </div>
+                        </div>
+
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Name</Label>
+                                <Label
+                                    htmlFor="name"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Name
+                                </Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -55,7 +103,12 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Email address</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Email address
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -69,7 +122,12 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="phone" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">WhatsApp number</Label>
+                                <Label
+                                    htmlFor="phone"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    WhatsApp number
+                                </Label>
                                 <Input
                                     id="phone"
                                     type="tel"
@@ -82,7 +140,12 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Password</Label>
+                                <Label
+                                    htmlFor="password"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Password
+                                </Label>
                                 <PasswordInput
                                     id="password"
                                     required
@@ -96,7 +159,10 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation" className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                <Label
+                                    htmlFor="password_confirmation"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
                                     Confirm password
                                 </Label>
                                 <PasswordInput

@@ -13,6 +13,7 @@ import { register } from '@/routes';
 /* @end-chisel-registration */
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import type { TeamInvitationContext } from '@/types';
 
 type Props = {
     status?: string;
