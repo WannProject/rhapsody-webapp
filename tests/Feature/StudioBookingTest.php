@@ -5,11 +5,17 @@ namespace Tests\Feature;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentMethodType;
 use App\Enums\PaymentStatus;
+use App\Jobs\SendFonnteMessage;
 use App\Models\Booking;
 use App\Models\PaymentMethod;
 use App\Models\StudioSetting;
 use App\Models\User;
+use App\Services\BookingSchedule;
+use App\Services\PaymentService;
+use App\Services\XenditClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class StudioBookingTest extends TestCase
@@ -52,6 +58,8 @@ class StudioBookingTest extends TestCase
             'status' => BookingStatus::Pending->value,
             'payment_status' => PaymentStatus::Unpaid->value,
         ]);
+        $this->assertNotNull($booking->held_until);
+        $this->assertTrue($booking->held_until->greaterThan(now()));
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
@@ -123,6 +131,171 @@ class StudioBookingTest extends TestCase
 
         $response->assertRedirect(route('home'));
         $response->assertSessionHasErrors('starts_at');
+    }
+
+    public function test_customer_booking_creates_xendit_invoice_and_redirects_to_payment_url(): void
+    {
+        config(['xendit.secret_key' => 'xnd_test_secret']);
+        $this->app->forgetInstance(XenditClient::class);
+        $this->app->forgetInstance(PaymentService::class);
+
+        Http::fake([
+            'https://api.xendit.co/v2/invoices' => Http::response([
+                'id' => 'inv-test-001',
+                'invoice_url' => 'https://checkout.xendit.co/web/inv-test-001',
+                'expiry_date' => now()->addDay()->toIso8601String(),
+            ]),
+        ]);
+
+        $user = User::factory()->create(['phone' => null]);
+        $paymentMethod = $this->paymentMethod();
+        $bookingDate = now()->addDay()->toDateString();
+
+        $this
+            ->actingAs($user)
+            ->post(route('bookings.store'), [
+                'booking_date' => $bookingDate,
+                'starts_at' => '09:00',
+                'payment_method_id' => $paymentMethod->id,
+                'customer_phone' => '628123456789',
+            ])
+            ->assertRedirect('https://checkout.xendit.co/web/inv-test-001');
+
+        $booking = Booking::query()->firstOrFail();
+
+        $this->assertDatabaseHas('payments', [
+            'booking_id' => $booking->id,
+            'xendit_invoice_id' => 'inv-test-001',
+            'payment_link_url' => 'https://checkout.xendit.co/web/inv-test-001',
+            'amount' => 300000,
+            'status' => 'pending',
+        ]);
+
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.xendit.co/v2/invoices'
+            && $request['external_id'] !== null
+            && $request['amount'] === 300000
+            && $request['payer_email'] === $user->email);
+    }
+
+    public function test_customer_booking_does_not_send_whatsapp_before_payment_is_paid(): void
+    {
+        Queue::fake();
+
+        StudioSetting::active()->update(['contact_phone' => '6281234567890']);
+
+        $user = User::factory()->create(['phone' => null]);
+        $paymentMethod = $this->paymentMethod();
+        $bookingDate = now()->addDay()->toDateString();
+
+        $this
+            ->actingAs($user)
+            ->post(route('bookings.store'), [
+                'booking_date' => $bookingDate,
+                'starts_at' => '09:00',
+                'payment_method_id' => $paymentMethod->id,
+                'customer_phone' => '628123456789',
+            ])
+            ->assertRedirect(route('bookings', ['date' => $bookingDate]));
+
+        Queue::assertNotPushed(SendFonnteMessage::class);
+    }
+
+    public function test_pending_hold_blocks_slot_until_hold_expires(): void
+    {
+        config(['booking.hold_minutes' => 15]);
+
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $date = now()->addDay()->toDateString();
+
+        $heldBooking = $this->booking($firstUser, $paymentMethod, $date);
+        $heldBooking->update(['held_until' => now()->addMinutes(15)]);
+
+        $this
+            ->actingAs($secondUser)
+            ->from(route('bookings'))
+            ->post(route('bookings.store'), [
+                'booking_date' => $date,
+                'starts_at' => '09:00',
+                'payment_method_id' => $paymentMethod->id,
+                'customer_phone' => '628123456789',
+            ])
+            ->assertRedirect(route('bookings'))
+            ->assertSessionHasErrors('starts_at');
+
+        $this->travelTo(now()->addMinutes(16));
+
+        $this
+            ->actingAs($secondUser)
+            ->post(route('bookings.store'), [
+                'booking_date' => $date,
+                'starts_at' => '09:00',
+                'payment_method_id' => $paymentMethod->id,
+                'customer_phone' => '628123456789',
+            ])
+            ->assertRedirect(route('bookings', ['date' => $date]));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $heldBooking->id,
+            'status' => BookingStatus::Expired->value,
+            'payment_status' => PaymentStatus::Expired->value,
+        ]);
+        $this->assertEquals(2, Booking::query()->whereDate('booking_date', $date)->count());
+    }
+
+    public function test_schedule_marks_held_slots_unavailable_and_terminal_slots_available(): void
+    {
+        $user = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $studio = StudioSetting::active();
+        $date = now()->addDay()->toDateString();
+
+        $heldBooking = $this->booking($user, $paymentMethod, $date);
+        $heldBooking->update(['held_until' => now()->addMinutes(15)]);
+
+        $slots = app(BookingSchedule::class)->slotsForDate($date, $studio);
+        $heldSlot = $slots->firstWhere('time', '09:00');
+
+        $this->assertFalse($heldSlot['available']);
+        $this->assertSame('Ditahan sementara', $heldSlot['label']);
+
+        $heldBooking->update([
+            'status' => BookingStatus::Expired,
+            'payment_status' => PaymentStatus::Expired,
+            'held_until' => null,
+        ]);
+
+        $slots = app(BookingSchedule::class)->slotsForDate($date, $studio);
+        $releasedSlot = $slots->firstWhere('time', '09:00');
+
+        $this->assertTrue($releasedSlot['available']);
+        $this->assertSame('Tersedia', $releasedSlot['label']);
+    }
+
+    public function test_terminal_booking_statuses_do_not_block_slots(): void
+    {
+        $user = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $studio = StudioSetting::active();
+
+        foreach ([BookingStatus::Cancelled, BookingStatus::Expired, BookingStatus::Refunded] as $index => $status) {
+            $date = now()->addDays($index + 1)->toDateString();
+            $booking = $this->booking($user, $paymentMethod, $date);
+            $booking->update([
+                'status' => $status,
+                'payment_status' => match ($status) {
+                    BookingStatus::Cancelled => PaymentStatus::Cancelled,
+                    BookingStatus::Refunded => PaymentStatus::Refunded,
+                    default => PaymentStatus::Expired,
+                },
+                'held_until' => null,
+            ]);
+
+            $this->assertTrue(app(BookingSchedule::class)->isSlotAvailable($date, '09:00', '11:00'));
+            $slot = app(BookingSchedule::class)->slotsForDate($date, $studio)->firstWhere('time', '09:00');
+            $this->assertTrue($slot['available']);
+        }
     }
 
     public function test_admin_can_update_booking_status_and_delete_booking(): void

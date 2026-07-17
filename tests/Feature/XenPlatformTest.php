@@ -8,6 +8,7 @@ use App\Enums\PaymentGatewayStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SplitStatus;
 use App\Enums\WithdrawalStatus;
+use App\Jobs\SendFonnteMessage;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\Payment;
@@ -20,6 +21,8 @@ use App\Models\User;
 use App\Models\XenditSubAccount;
 use App\Services\PlatformWalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -63,7 +66,7 @@ class XenPlatformTest extends TestCase
             'clients' => ['user_id', 'status', 'verified_at'],
             'xendit_sub_accounts' => ['client_id', 'xendit_account_id', 'status'],
             'platform_fee_rules' => ['client_id', 'fee_type', 'percent', 'flat_amount'],
-            'payments' => ['booking_id', 'client_id', 'status', 'split_status'],
+            'payments' => ['booking_id', 'client_id', 'status', 'split_status', 'paid_notification_sent_at'],
             'platform_wallet_ledger_entries' => ['payment_id', 'platform_withdrawal_id', 'type', 'amount'],
             'platform_withdrawals' => ['requested_by', 'amount', 'status'],
         ];
@@ -302,9 +305,10 @@ class XenPlatformTest extends TestCase
     public function test_payment_webhook_marks_payment_paid_idempotently(): void
     {
         config()->set('xendit.callback_verification_token', 'test-token');
+        Queue::fake();
 
+        StudioSetting::active()->update(['contact_phone' => '628700001111']);
         $booking = $this->createBookingWithPayment();
-
         $payment = $booking->payment;
 
         $this
@@ -318,8 +322,9 @@ class XenPlatformTest extends TestCase
 
         $payment->refresh();
         $this->assertEquals(PaymentGatewayStatus::Paid, $payment->status);
+        $this->assertNotNull($payment->paid_notification_sent_at);
 
-        $secondResponse = $this
+        $this
             ->withHeaders(['X-CALLBACK-TOKEN' => 'test-token'])
             ->postJson(route('webhooks.xendit'), [
                 'external_id' => $payment->xendit_external_id,
@@ -328,6 +333,18 @@ class XenPlatformTest extends TestCase
             ->assertOk();
 
         $this->assertEquals(1, Payment::query()->where('booking_id', $booking->id)->count());
+        Queue::assertPushed(SendFonnteMessage::class, 1);
+        Queue::assertPushed(SendFonnteMessage::class, fn (SendFonnteMessage $job) => $job->target === '628700001111'
+            && str_contains($job->message, 'BOOKING STUDIO BARU')
+            && str_contains($job->message, 'Nama Band: '.$booking->customer_name)
+            && str_contains($job->message, 'Nama Pemesan: '.$booking->customer_name)
+            && str_contains($job->message, 'Nomor WhatsApp: '.$booking->customer_phone)
+            && str_contains($job->message, 'Tanggal Booking: '.$booking->booking_date->format('d/m/Y'))
+            && str_contains($job->message, 'Jam Booking: 09:00 - 11:00')
+            && str_contains($job->message, 'Durasi: 2 jam')
+            && str_contains($job->message, 'Alat Digunakan: Belum dicatat')
+            && str_contains($job->message, 'Total Pembayaran: Rp 300.000')
+            && str_contains($job->message, 'Status Pembayaran: Berhasil'));
     }
 
     public function test_webhook_rejected_without_valid_token(): void
@@ -364,6 +381,29 @@ class XenPlatformTest extends TestCase
         $booking->refresh();
         $this->assertEquals(PaymentStatus::Paid, $booking->payment_status);
         $this->assertEquals(BookingStatus::Confirmed, $booking->status);
+    }
+
+    public function test_webhook_expired_marks_booking_expired(): void
+    {
+        config()->set('xendit.callback_verification_token', 'test-token');
+
+        $booking = $this->createBookingWithPayment();
+        $payment = $booking->payment;
+
+        $this
+            ->withHeaders(['X-CALLBACK-TOKEN' => 'test-token'])
+            ->postJson(route('webhooks.xendit'), [
+                'external_id' => $payment->xendit_external_id,
+                'status' => 'EXPIRED',
+            ])
+            ->assertOk();
+
+        $booking->refresh();
+        $payment->refresh();
+
+        $this->assertEquals(PaymentGatewayStatus::Expired, $payment->status);
+        $this->assertEquals(PaymentStatus::Expired, $booking->payment_status);
+        $this->assertEquals(BookingStatus::Expired, $booking->status);
     }
 
     public function test_withdrawal_exceeding_balance_is_rejected(): void
@@ -431,6 +471,30 @@ class XenPlatformTest extends TestCase
         $wallet->failWithdrawal($withdrawal, 'Test failure');
 
         $this->assertEquals(500000, $wallet->availableBalance());
+    }
+
+    public function test_non_pending_withdrawal_is_not_processed_again(): void
+    {
+        config()->set('xendit.secret_key', 'xnd_test_secret');
+
+        Http::fake();
+
+        $withdrawal = PlatformWithdrawal::query()->create([
+            'requested_by' => User::factory()->superAdmin()->create()->id,
+            'amount' => 100000,
+            'currency' => 'IDR',
+            'status' => WithdrawalStatus::Succeeded,
+            'processed_at' => now()->subDay(),
+            'xendit_payout_id' => 'payout-existing',
+        ]);
+
+        app(PlatformWalletService::class)->processWithdrawal($withdrawal);
+
+        $withdrawal->refresh();
+
+        $this->assertEquals(WithdrawalStatus::Succeeded, $withdrawal->status);
+        $this->assertEquals('payout-existing', $withdrawal->xendit_payout_id);
+        Http::assertNothingSent();
     }
 
     public function test_ledger_available_balance_calculation(): void

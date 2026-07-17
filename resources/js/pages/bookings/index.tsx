@@ -80,12 +80,17 @@ const bookingStatuses = [
     ['confirmed', 'Terkonfirmasi'],
     ['cancelled', 'Dibatalkan'],
     ['completed', 'Selesai'],
+    ['expired', 'Kedaluwarsa'],
+    ['refunded', 'Refunded'],
 ];
 const paymentStatuses = [
     ['unpaid', 'Belum Dibayar'],
     ['pending_confirmation', 'Menunggu Konfirmasi'],
     ['paid', 'Lunas'],
+    ['failed', 'Gagal'],
+    ['expired', 'Kedaluwarsa'],
     ['cancelled', 'Dibatalkan'],
+    ['refunded', 'Refunded'],
 ];
 const methodTypes = [
     ['qris', 'QRIS'],

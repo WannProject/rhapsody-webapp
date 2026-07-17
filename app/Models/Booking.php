@@ -31,6 +31,7 @@ use Illuminate\Support\Str;
  * @property string|null $admin_notes
  * @property Carbon|null $confirmed_at
  * @property Carbon|null $cancelled_at
+ * @property Carbon|null $held_until
  * @property-read User $user
  * @property-read Client|null $client
  * @property-read PaymentMethod|null $paymentMethod
@@ -53,6 +54,7 @@ use Illuminate\Support\Str;
     'admin_notes',
     'confirmed_at',
     'cancelled_at',
+    'held_until',
 ])]
 class Booking extends Model
 {
@@ -108,7 +110,18 @@ class Booking extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', '!=', BookingStatus::Cancelled->value);
+        return $query
+            ->whereNotIn('status', [
+                BookingStatus::Cancelled->value,
+                BookingStatus::Expired->value,
+                BookingStatus::Refunded->value,
+            ])
+            ->where(function (Builder $query) {
+                $query
+                    ->where('status', '!=', BookingStatus::Pending->value)
+                    ->orWhereNull('held_until')
+                    ->orWhere('held_until', '>=', now());
+            });
     }
 
     public function isOwnedBy(User $user): bool
@@ -143,6 +156,7 @@ class Booking extends Model
             'total_price' => 'integer',
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'held_until' => 'datetime',
         ];
     }
 }

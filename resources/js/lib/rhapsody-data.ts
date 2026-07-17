@@ -8,6 +8,7 @@ import {
     Music2,
     QrCode,
     ReceiptText,
+    Settings2,
     Users,
     Percent,
     Wallet,
@@ -52,6 +53,14 @@ export const navItems: NavItem[] = [
         href: '/reports',
         authRequired: true,
         adminRequired: true,
+    },
+    {
+        view: 'studio-data',
+        label: 'Ubah Data',
+        icon: Settings2,
+        href: '/admin/studio-data',
+        authRequired: true,
+        superAdminRequired: true,
     },
     {
         view: 'clients',

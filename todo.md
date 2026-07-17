@@ -1,201 +1,363 @@
-# TODO — Rhapsody Webapp
+# TODO - Rhapsody Webapp
 
-## A. Perbaikan Cepat dari Review Repo
+Dokumen ini diperbarui dari audit SOP "Aplikasi Penyewaan Studio Musik" terhadap codebase saat ini.
 
-- [ ] Fix link tombol `Booking Sekarang` di `resources/js/pages/schedule/index.tsx` dari `/booking` menjadi `/bookings`.
-- [ ] Ganti parameter `Request $request` di `BookingController::update()` menjadi `UpdateBookingRequest $request`.
-- [ ] Pisahkan logic update admin dan update customer agar validasinya tidak bercampur.
-- [ ] Pastikan customer hanya bisa update booking miliknya sendiri dengan status `pending`.
-- [ ] Pastikan update booking customer tetap mengecek tabrakan slot menggunakan `BookingSchedule::isSlotAvailable()`.
-- [ ] Hapus nested form pada `BookingCard` karena form delete saat ini berada di dalam form update.
-- [ ] Hapus tombol delete admin yang dobel pada card booking.
-- [ ] Pisahkan form delete payment method dari form update payment method.
-- [ ] Ubah `DatabaseSeeder` agar tidak hardcode admin email/password; gunakan `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan `ADMIN_PHONE` dari `.env` atau panggil `AdminUserSeeder`.
-- [ ] Tambahkan feature test untuk create booking, update booking, cancel booking, dan admin update status.
+Status verifikasi terakhir:
+- `php artisan test`: lulus, 137 tests / 529 assertions.
+- `npm run build`: lulus.
+- Codebase sudah di-index ke `.codebase-memory/graph.db.zst`.
 
-## B. Persiapan XenPlatform
+## Prioritas P0 - Harus Dikerjakan Dulu
 
-- [ ] Ajukan/aktifkan XenPlatform pada akun Xendit platform owner.
-- [ ] Tentukan tipe sub-account yang akan digunakan untuk client.
-- [ ] Tentukan struktur fee platform: flat, percent, atau hybrid.
-- [ ] Tentukan siapa yang menanggung transaction fee dan VAT.
-- [ ] Tentukan kebijakan refund, chargeback, dan split fee reversal.
-- [ ] Tambahkan environment variable:
-  - [ ] `XENDIT_SECRET_KEY`
-  - [ ] `XENDIT_WEBHOOK_TOKEN`
-  - [ ] `XENDIT_CALLBACK_VERIFICATION_TOKEN`
-  - [ ] `XENDIT_PLATFORM_ACCOUNT_ID`
-  - [ ] `XENDIT_BASE_URL`
-- [ ] Buat config `config/xendit.php` atau tambahkan konfigurasi Xendit di `config/services.php`.
+### 1. Betulkan flow booking ke Xendit
 
-## C. Database Migration
+- [x] Tentukan strategi pembayaran utama:
+  - [x] Direct invoice dari akun Xendit studio, atau
+  - [x] XenPlatform sub-account client.
+- [x] Pastikan setiap booking customer bisa membuat invoice Xendit tanpa bergantung pada `client_id` kosong.
+- [x] Saat booking dibuat, simpan payment record dengan `external_id`, `invoice_id`, `payment_link_url`, `amount`, dan status `pending`.
+- [x] Setelah invoice dibuat, arahkan customer ke payment URL Xendit, bukan hanya kembali ke `/bookings`.
+- [x] Tampilkan link/tombol "Bayar Sekarang" jika invoice URL sudah tersedia.
+- [x] Jangan konfirmasi booking dari halaman sukses browser.
+- [x] Konfirmasi booking hanya dari webhook Xendit yang valid.
+- [x] Tambahkan handling invoice expired agar booking ikut `expired` dan slot dilepas.
+- [x] Tambahkan handling payment failed/refunded jika dibutuhkan SOP refund.
+- [x] Tambahkan test untuk booking -> invoice created -> redirect/payment link tersedia.
 
-- [x] Buat tabel `clients` jika sistem akan mendukung multi-client/merchant.
-- [x] Tambahkan relasi client ke user/admin client.
-- [x] Buat tabel `xendit_sub_accounts`.
-- [x] Buat tabel `platform_fee_rules`.
-- [x] Buat tabel `payments`.
-- [x] Buat tabel `platform_wallet_ledger_entries`.
-- [x] Buat tabel `platform_withdrawals`.
-- [x] Tambahkan enum untuk payment status:
-  - [x] `pending`
-  - [x] `paid`
-  - [x] `expired`
-  - [x] `failed`
-  - [x] `refunded`
-- [x] Tambahkan enum untuk split status:
-  - [x] `pending`
-  - [x] `succeeded`
-  - [x] `failed`
-  - [x] `not_applicable`
-- [x] Tambahkan enum untuk withdrawal status:
-  - [x] `pending`
-  - [x] `processing`
-  - [x] `succeeded`
-  - [x] `failed`
-  - [x] `cancelled`
+### 2. Pindahkan WhatsApp notification sesuai SOP
 
-## D. Model dan Relasi
+- [x] Hapus pengiriman WhatsApp "booking baru" dari `BookingController::store()`.
+- [x] Kirim WhatsApp ke superadmin hanya setelah webhook Xendit valid dan payment `paid`.
+- [x] Pastikan format pesan sesuai SOP:
+  - [x] Nama Band.
+  - [x] Nama Pemesan.
+  - [x] Nomor WhatsApp.
+  - [x] Tanggal Booking.
+  - [x] Jam Booking.
+  - [x] Durasi Booking.
+  - [x] Alat Digunakan.
+  - [x] Total Pembayaran.
+  - [x] Status Pembayaran: Berhasil.
+- [x] Tambahkan idempotency supaya webhook ulang tidak mengirim WA dobel.
+- [x] Tambahkan test bahwa WA tidak dikirim saat booking dibuat.
+- [x] Tambahkan test bahwa WA dikirim setelah webhook paid.
 
-- [x] Buat model `Client`.
-- [x] Buat model `XenditSubAccount`.
-- [x] Buat model `PlatformFeeRule`.
-- [x] Buat model `Payment`.
-- [x] Buat model `PlatformWalletLedgerEntry`.
-- [x] Buat model `PlatformWithdrawal`.
-- [x] Relasikan `Client` ke `XenditSubAccount`.
-- [x] Relasikan `Client` ke `Booking`.
-- [x] Relasikan `Booking` ke `Payment`.
-- [x] Relasikan `PlatformWithdrawal` ke user requester.
+### 3. Perkuat anti bentrok booking
 
-## E. Service Layer
+- [x] Tambahkan konsep slot hold sementara saat customer masuk tahap pembayaran.
+- [x] Simpan `held_until` atau field setara untuk booking pending/payment hold.
+- [x] Slot `held` harus tampil sebagai tidak tersedia untuk customer lain.
+- [x] Slot dilepas otomatis saat payment expired atau hold melewati batas.
+- [x] Tambahkan locking/transaksi yang benar saat membuat booking.
+- [ ] Tambahkan proteksi database terhadap double booking untuk slot aktif.
+- [x] Tambahkan test simulasi dua customer memilih slot sama.
+- [x] Pastikan status cancelled/expired/refunded tidak memblokir slot aktif.
 
-- [ ] Buat service `XenditClient`.
-- [ ] Implement method `createSubAccount()`.
-- [ ] Implement method `createSplitRule()`.
-- [ ] Implement method `createInvoiceForSubAccount()` atau payment request sesuai channel yang dipilih.
-- [ ] Implement method `createPayout()` untuk withdrawal.
-- [ ] Implement method `getBalance()` jika dibutuhkan di dashboard.
-- [ ] Implement method `verifyWebhook()`.
-- [ ] Buat service `PaymentService`.
-- [ ] Buat service `PlatformWalletService`.
-- [ ] Pastikan semua request eksternal memiliki timeout dan error handling.
+### 4. Fix bug withdrawal guard
 
-## F. Sub-Account Client
+- [x] Perbaiki kondisi di `PlatformWalletService::processWithdrawal()` dari `! $withdrawal->status === ...` menjadi pengecekan status yang benar.
+- [x] Tambahkan test bahwa withdrawal non-pending tidak diproses ulang.
+- [x] Pastikan failed withdrawal mengembalikan ledger debit seperti aturan saat ini.
+- [x] Pastikan log withdrawal tidak menyimpan data rekening secara berlebihan.
 
-- [ ] Buat halaman super admin daftar client merchant.
-- [ ] Buat form tambah client merchant.
-- [ ] Buat tombol/integrasi create Xendit sub-account.
-- [ ] Simpan `xendit_account_id` setelah sub-account dibuat.
-- [ ] Simpan status onboarding/KYC client.
-- [ ] Tambahkan filter status: draft, invited, submitted, verified, rejected, suspended.
-- [ ] Tampilkan warning jika client belum verified sehingga belum bisa menerima pembayaran.
+## Prioritas P1 - Gap Data Model SOP
 
-## G. Split Fee / Revenue Share
+### 5. Customer profile dan registrasi
 
-- [ ] Buat halaman konfigurasi platform fee.
-- [ ] Dukung fee percent.
-- [ ] Dukung fee flat.
-- [ ] Dukung hybrid jika dibutuhkan.
-- [ ] Buat split rule di Xendit saat fee rule disimpan.
-- [ ] Simpan `xendit_split_rule_id` di database.
-- [ ] Saat create payment, sertakan split rule yang sesuai.
-- [ ] Simpan platform fee expected amount pada tabel `payments`.
-- [ ] Simpan split webhook result jika tersedia.
-- [ ] Tambahkan status `split_failed` untuk rekonsiliasi manual.
+- [ ] Buat migration/model `CustomerProfile` atau tambahkan struktur setara.
+- [ ] Simpan data registrasi SOP:
+  - [ ] Nama Band.
+  - [ ] Nama Pemesan.
+  - [ ] Email.
+  - [ ] Nomor WhatsApp.
+  - [ ] Password.
+- [ ] Update form register agar field sesuai SOP, bukan hanya `name`, `email`, `phone`.
+- [ ] Normalisasi nomor WhatsApp ke format konsisten.
+- [ ] Pastikan email tetap unique.
+- [ ] Pastikan password tetap disimpan hashed.
+- [ ] Update halaman profile untuk mengelola Nama Band, Nama Pemesan, dan WhatsApp.
+- [ ] Tambahkan test registrasi customer dengan nama band.
 
-## H. Payment Flow Booking
+### 6. Equipment dan alat booking
 
-- [ ] Ubah flow create booking agar dapat membuat payment record.
-- [ ] Integrasikan payment link/invoice Xendit.
-- [ ] Buat halaman instruksi pembayaran customer.
-- [ ] Buat halaman payment status.
-- [ ] Tambahkan webhook endpoint untuk payment paid/expired/failed.
-- [ ] Update status booking setelah payment sukses sesuai business rule.
-- [ ] Kirim WhatsApp notification saat payment sukses.
-- [ ] Simpan raw webhook payload untuk audit.
-- [ ] Pastikan webhook idempotent agar tidak double update.
+- [x] Buat migration/model `Equipment`.
+- [ ] Buat migration/model pivot `BookingEquipment`.
+- [x] Seed data alat SOP:
+  - [x] Gitar listrik 1.
+  - [x] Gitar listrik 2.
+  - [x] Gitar akustik.
+  - [x] Piano atau keyboard.
+  - [x] Bass.
+  - [x] Drum akustik.
+  - [x] Mikrofon vokal.
+- [x] Tambahkan field `stock`, `additional_price`, dan `is_active` untuk alat studio.
+- [ ] Booking form alat harus benar-benar mengirim pilihan ke backend.
+- [ ] Gunakan checkbox untuk alat milik studio.
+- [ ] Mikrofon vokal memakai pilihan jumlah 0 sampai 2.
+- [ ] Validasi mikrofon maksimal 2 di backend.
+- [ ] Tambahkan field teks untuk alat tambahan milik customer.
+- [ ] Simpan snapshot harga alat pada booking.
+- [ ] Tampilkan daftar alat di detail pesanan customer dan admin.
+- [ ] Tambahkan test validasi mikrofon maksimal 2.
+- [ ] Tambahkan test alat booking tersimpan dan tampil di detail.
 
-## I. Super Admin Platform Wallet
+### 7. Studio, harga, dan time slot
 
-- [x] Buat route `/admin/platform-wallet` atau `/platform-wallet` dengan middleware super admin.
-- [x] Buat controller `PlatformWalletController`.
-- [x] Buat page React `resources/js/pages/admin/platform-wallet/index.tsx`.
-- [x] Tampilkan card `Available Balance`.
-- [x] Tampilkan card `Total Platform Fee`.
-- [x] Tampilkan card `Pending Withdrawal`.
-- [x] Tampilkan card `Total Withdrawn`.
-- [x] Tampilkan tabel ledger platform fee.
-- [x] Tampilkan tabel withdrawal history.
-- [x] Tambahkan filter tanggal dan status.
-- [x] Tambahkan pagination.
-- [x] Tambahkan export CSV jika dibutuhkan.
+- [x] Putuskan apakah tetap memakai `studio_settings` atau migrasi ke tabel `studios` sesuai ERD SOP.
+- [x] Jika tetap `studio_settings`, tambahkan field yang kurang:
+  - [x] Address.
+  - [x] Description.
+  - [x] Harga per jam.
+  - [x] Durasi minimum booking.
+  - [x] Jam operasional.
+  - [x] Status aktif.
+- [ ] Simpan snapshot `base_price`, `additional_price`, dan `total_price` pada booking.
+- [ ] Pertimbangkan tabel `time_slots` eksplisit jika slot hold/booked/blocked ingin dikelola per tanggal.
+- [ ] Tambahkan status slot:
+  - [ ] `available`.
+  - [ ] `held`.
+  - [ ] `booked`.
+  - [ ] `blocked`.
+- [ ] Tambahkan fitur superadmin untuk block slot tertentu.
 
-## J. Super Admin Withdrawal
+### 8. Notification history
 
-- [ ] Buat route `POST /admin/platform-withdrawals`.
-- [ ] Buat controller `PlatformWithdrawalController`.
-- [ ] Buat request validation `StorePlatformWithdrawalRequest`.
-- [ ] Validasi nominal minimum withdrawal.
-- [ ] Validasi nominal tidak boleh melebihi available balance.
-- [ ] Validasi rekening tujuan.
-- [ ] Simpan withdrawal status `pending`.
-- [ ] Kirim payout/withdrawal request ke Xendit.
-- [ ] Ubah status menjadi `processing`.
-- [ ] Buat webhook handler untuk withdrawal success/failed.
-- [ ] Jika succeeded, catat debit ledger.
-- [ ] Jika failed, tampilkan failure reason dan jangan kurangi saldo final.
-- [ ] Tambahkan audit log untuk setiap request withdrawal.
+- [ ] Buat tabel/model `Notification` atau struktur audit notifikasi.
+- [ ] Simpan channel, recipient, title, message, status, dan sent_at.
+- [ ] Catat notifikasi WhatsApp payment success ke superadmin.
+- [ ] Catat notifikasi payment success ke customer jika channel sudah ditentukan.
+- [ ] Tambahkan retry/error state untuk notifikasi gagal.
 
-## K. Authorization dan Security
+## Prioritas P1 - UI dan Alur Customer
 
-- [ ] Tambahkan role `super_admin` jika saat ini hanya ada `admin` dan `customer`.
-- [ ] Buat middleware `EnsureSuperAdmin`.
-- [ ] Batasi halaman wallet hanya untuk super admin/platform owner.
-- [ ] Batasi data rekening hanya untuk role yang berhak.
-- [ ] Verifikasi webhook Xendit.
-- [ ] Jangan simpan API key di database.
-- [ ] Jangan hitung saldo dari frontend.
-- [ ] Tambahkan rate limit untuk endpoint withdrawal.
-- [ ] Tambahkan audit log untuk update fee rule dan withdrawal.
+### 9. Booking customer sesuai SOP
 
-## L. Testing
+- [ ] Booking page harus memandu urutan:
+  - [ ] Pilih tanggal.
+  - [ ] Pilih jam tersedia.
+  - [ ] Slot ditahan sementara.
+  - [ ] Pilih alat.
+  - [ ] Isi alat tambahan sendiri.
+  - [ ] Lihat ringkasan pesanan.
+  - [ ] Lanjutkan pembayaran.
+- [ ] Slot harus menampilkan status:
+  - [ ] Tersedia.
+  - [ ] Ditahan sementara.
+  - [ ] Sudah dibooking.
+- [ ] Customer dashboard dapat melihat tanggal berikutnya.
+- [ ] Landing/schedule publik hanya menampilkan jadwal hari ini.
+- [ ] Jika public schedule menerima query date, batasi atau redirect ke hari ini.
+- [ ] Customer harus login sebelum memilih jadwal dari landing/schedule.
 
-- [ ] Feature test: customer create booking.
-- [ ] Feature test: customer tidak bisa booking slot yang sudah terisi.
-- [ ] Feature test: customer tidak bisa update booking confirmed.
-- [ ] Feature test: admin bisa update status booking.
-- [ ] Feature test: super admin bisa melihat wallet.
-- [ ] Feature test: non-super-admin tidak bisa melihat wallet.
-- [ ] Feature test: super admin bisa request withdrawal valid.
-- [ ] Feature test: withdrawal melebihi saldo ditolak.
-- [ ] Feature test: payment webhook paid idempotent.
-- [ ] Feature test: split failed tidak membuat payment gagal.
-- [ ] Unit test: perhitungan platform fee percent.
-- [ ] Unit test: perhitungan platform fee flat.
-- [ ] Unit test: ledger available balance.
+### 10. Info pesanan dan riwayat booking
 
-## M. Deployment Checklist
+- [ ] Buat/tajamkan halaman "Info Pesanan" customer.
+- [ ] Pisahkan pesanan aktif dan riwayat pesanan.
+- [ ] Tampilkan detail pesanan:
+  - [ ] Booking code.
+  - [ ] Data customer.
+  - [ ] Tanggal dan jam.
+  - [ ] Durasi.
+  - [ ] Daftar alat.
+  - [ ] Total pembayaran.
+  - [ ] Status booking.
+  - [ ] Status pembayaran.
+  - [ ] Link payment jika masih pending.
+- [ ] Customer hanya bisa melihat pesanan miliknya.
 
-- [ ] Pastikan `.env` production berisi Xendit API key production.
-- [ ] Pastikan webhook URL production sudah didaftarkan di Xendit Dashboard.
-- [ ] Pastikan queue worker berjalan.
-- [ ] Pastikan scheduler berjalan jika ada rekonsiliasi berkala.
-- [ ] Pastikan log channel production aktif.
-- [ ] Pastikan database backup aktif.
-- [ ] Pastikan SSL aktif.
-- [ ] Pastikan admin default password sudah diganti.
-- [ ] Pastikan APP_DEBUG=false.
-- [ ] Jalankan `composer test`.
+## Prioritas P1 - UI dan Alur Superadmin
+
+### 11. Pengelolaan pesanan superadmin
+
+- [ ] Pastikan menu "Info Pesanan" superadmin menampilkan seluruh pesanan.
+- [ ] Tambahkan filter SOP:
+  - [ ] Tanggal.
+  - [ ] Nama Band.
+  - [ ] Status booking.
+  - [ ] Status pembayaran.
+- [ ] Tambahkan detail pesanan admin lengkap:
+  - [ ] Data customer.
+  - [ ] Jadwal.
+  - [ ] Daftar alat.
+  - [ ] Total pembayaran.
+  - [ ] Status pembayaran.
+- [ ] Superadmin bisa mengubah status booking ke `completed`.
+- [ ] Batasi perubahan status payment agar tidak bertentangan dengan webhook Xendit.
+- [ ] Tambahkan flow pembatalan/refund sesuai aturan studio.
+
+### 12. Halaman "Ubah Data"
+
+- [x] Buat route/controller/page admin untuk pengaturan studio.
+- [x] Superadmin bisa mengubah data studio:
+  - [x] Nama studio.
+  - [x] Alamat.
+  - [x] Deskripsi.
+  - [x] Kontak/lokasi jika dibutuhkan landing page.
+- [x] Superadmin bisa mengubah harga:
+  - [x] Harga per jam.
+  - [x] Biaya tambahan alat.
+  - [x] Durasi minimum booking.
+- [x] Harga baru hanya berlaku untuk booking berikutnya.
+- [x] Booking yang sudah dibuat tidak berubah harganya.
+- [x] Superadmin bisa mengelola data alat:
+  - [x] Nama alat.
+  - [x] Kategori.
+  - [x] Stok.
+  - [x] Harga tambahan.
+  - [x] Status aktif.
+- [x] Superadmin bisa mengelola jam operasional.
+- [x] Tambahkan test bahwa update harga tidak mengubah booking lama.
+
+### 13. Wallet dan penarikan dana
+
+- [x] Route superadmin platform wallet sudah ada.
+- [x] Controller platform wallet sudah ada.
+- [x] Page React platform wallet sudah ada.
+- [x] Withdrawal request dasar sudah ada.
+- [x] Validasi minimum withdrawal sudah ada.
+- [x] Validasi saldo tidak cukup sudah ada.
+- [ ] Tampilkan saldo Xendit live sesuai SOP, atau tulis keputusan eksplisit bahwa saldo memakai ledger internal.
+- [ ] Jika memakai saldo Xendit live, hubungkan `XenditClient::getBalance()` ke wallet page.
+- [ ] Tambahkan webhook/rekonsiliasi payout success/failed.
+- [ ] Simpan riwayat penarikan dengan reference id Xendit.
+- [ ] Tampilkan status pencairan dari Xendit jika tersedia.
+- [ ] Tambahkan test payout webhook success/failed.
+
+## Prioritas P2 - Status dan Konsistensi Bahasa Domain
+
+### 14. Selaraskan status SOP
+
+- [ ] Booking status perlu selaras dengan SOP:
+  - [ ] `pending_payment`.
+  - [ ] `confirmed`.
+  - [ ] `completed`.
+  - [ ] `cancelled`.
+  - [ ] `expired`.
+  - [ ] `refunded`.
+- [ ] Payment status perlu selaras dengan SOP:
+  - [ ] `pending`.
+  - [ ] `paid`.
+  - [ ] `failed`.
+  - [ ] `expired`.
+  - [ ] `refunded`.
+- [ ] Slot status perlu tersedia:
+  - [ ] `available`.
+  - [ ] `held`.
+  - [ ] `booked`.
+  - [ ] `blocked`.
+- [ ] Buat migration/backfill jika enum/value database berubah.
+- [ ] Update label UI bahasa Indonesia.
+- [ ] Update tests yang masih memakai status lama seperti `unpaid` atau `pending`.
+
+### 15. Rapikan sitemap dan navbar
+
+- [ ] Landing navbar:
+  - [ ] Home.
+  - [ ] Schedule.
+  - [ ] Login.
+- [ ] Landing home:
+  - [ ] Logo studio.
+  - [ ] Slider iklan/promosi.
+  - [ ] Tombol Register.
+  - [ ] Tombol Login.
+  - [ ] Informasi singkat studio.
+  - [ ] Harga studio.
+  - [ ] Fasilitas.
+  - [ ] Lokasi dan kontak.
+- [ ] Customer dashboard navbar:
+  - [ ] Beranda.
+  - [ ] Booking.
+  - [ ] Info Pesanan.
+  - [ ] Profil.
+  - [ ] Pengaturan.
+  - [ ] Ubah Password.
+  - [ ] Logout.
+- [ ] Superadmin navbar:
+  - [ ] Beranda.
+  - [ ] Info Pesanan.
+  - [ ] Ubah Data.
+  - [ ] Tarik Dana.
+  - [ ] Profil.
+  - [ ] Pengaturan.
+  - [ ] Ubah Password.
+  - [ ] Logout.
+
+## XenPlatform / Integrasi Xendit - Status Saat Ini
+
+### Sudah selesai di codebase
+
+- [x] Model `Client`.
+- [x] Model `XenditSubAccount`.
+- [x] Model `PlatformFeeRule`.
+- [x] Model `Payment`.
+- [x] Model `PlatformWalletLedgerEntry`.
+- [x] Model `PlatformWithdrawal`.
+- [x] Service `XenditClient`.
+- [x] Method `createSubAccount()`.
+- [x] Method `createSplitRule()`.
+- [x] Method `createInvoiceForSubAccount()`.
+- [x] Method `createPayout()`.
+- [x] Method `getBalance()`.
+- [x] Method `verifyWebhook()`.
+- [x] Service `PaymentService`.
+- [x] Service `PlatformWalletService`.
+- [x] Webhook endpoint `/webhooks/xendit`.
+- [x] Middleware `EnsureSuperAdmin`.
+- [x] Rate limit withdrawal route.
+- [x] Platform wallet page.
+- [x] Client merchant page.
+- [x] Platform fee page.
+- [x] Payment webhook paid idempotent test.
+- [x] Withdrawal sufficient/insufficient balance tests.
+- [x] Split failed does not block payment test.
+
+### Masih perlu dicek/dikerjakan
+
+- [ ] Pastikan `.env.example` berisi semua konfigurasi Xendit yang dibutuhkan.
+- [ ] Pastikan webhook URL production didaftarkan di dashboard Xendit.
+- [ ] Pastikan mode sandbox/production bisa dibedakan jelas.
+- [ ] Pastikan semua request eksternal punya timeout dan error handling yang tampil rapi ke user.
+- [ ] Pastikan API key tidak pernah muncul di log.
+- [ ] Tambahkan audit log untuk update fee rule.
+- [ ] Tambahkan audit log untuk status payout/withdrawal.
+
+## Testing Tambahan Wajib
+
+- [ ] Feature test: registrasi customer dengan Nama Band dan WhatsApp.
+- [ ] Feature test: customer booking dengan pilihan alat.
+- [ ] Feature test: mikrofon lebih dari 2 ditolak.
+- [x] Feature test: booking membuat invoice Xendit.
+- [x] Feature test: customer diarahkan atau mendapat payment URL Xendit.
+- [x] Feature test: webhook paid mengubah payment paid dan booking confirmed.
+- [x] Feature test: webhook expired mengubah booking expired dan melepas slot.
+- [x] Feature test: webhook paid tidak mengirim WA dobel.
+- [ ] Feature test: customer tidak bisa melihat booking user lain.
+- [ ] Feature test: superadmin bisa filter pesanan berdasarkan tanggal/nama band/status.
+- [x] Feature test: superadmin update harga tidak mengubah booking lama.
+- [x] Feature test: withdrawal non-pending tidak diproses ulang.
+- [ ] Unit test: total harga = base price + additional equipment price.
+- [ ] Unit test: normalisasi nomor WhatsApp.
+- [ ] Unit test: slot availability mengabaikan cancelled/expired/refunded.
+
+## Deployment Checklist
+
+- [ ] `.env` production berisi Xendit API key production.
+- [ ] `.env` production berisi callback verification token.
+- [ ] Webhook Xendit production mengarah ke `/webhooks/xendit`.
+- [ ] Queue worker berjalan jika notifikasi/rekonsiliasi dibuat async.
+- [ ] Scheduler berjalan untuk release slot expired/held.
+- [ ] Log channel production aktif.
+- [ ] Database backup aktif.
+- [ ] SSL aktif.
+- [ ] Admin default password sudah diganti.
+- [ ] `APP_DEBUG=false`.
+- [ ] Jalankan `php artisan test`.
 - [ ] Jalankan `npm run build`.
 - [ ] Jalankan smoke test payment sandbox sebelum production.
 
-## N. Catatan Keputusan dari Sesi Ini
+## Catatan Keputusan
 
-- Sistem diarahkan menjadi model platform/marketplace.
-- Akun Xendit owner menjadi Master Account.
-- Client bisnis menjadi sub-account/merchant di bawah akun owner.
-- Setiap transaksi client harus bisa memotong fee otomatis untuk platform owner.
-- Super admin membutuhkan halaman untuk mencairkan dana dari saldo platform.
-- Withdrawal harus memakai ledger internal agar tidak hanya mengandalkan tampilan saldo gateway.
-- Integrasi Xendit harus dirancang dengan webhook idempotent dan audit trail.
+- Saat ini implementasi tidak persis sama dengan ERD PDF: project memakai `StudioSetting` dan booking berbasis tanggal/jam langsung, belum memakai `TimeSlot` eksplisit.
+- Keputusan perlu dibuat: ikuti ERD PDF sepenuhnya atau adaptasi SOP ke struktur yang sudah ada.
+- Untuk mengurangi risiko, kerjakan P0 dulu sebelum refactor besar ke ERD penuh.
+- Wallet saat ini memakai ledger internal. SOP meminta saldo Xendit, jadi perlu keputusan apakah UI menampilkan ledger, saldo Xendit live, atau keduanya.

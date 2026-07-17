@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\BookingStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Booking;
 use App\Models\StudioSetting;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class BookingSchedule
@@ -27,13 +30,51 @@ class BookingSchedule
 
     public function isSlotAvailable(string $date, string $startsAt, string $endsAt, ?Booking $ignoreBooking = null): bool
     {
-        return ! Booking::query()
+        $this->releaseExpiredHolds($date);
+
+        return ! $this->conflictingBookings($date, $startsAt, $endsAt, $ignoreBooking)
+            ->exists();
+    }
+
+    public function lockSlotAvailable(string $date, string $startsAt, string $endsAt, ?Booking $ignoreBooking = null): bool
+    {
+        $this->releaseExpiredHolds($date);
+
+        return ! $this->conflictingBookings($date, $startsAt, $endsAt, $ignoreBooking)
+            ->lockForUpdate()
+            ->exists();
+    }
+
+    public function holdUntil(): CarbonImmutable
+    {
+        return CarbonImmutable::now()->addMinutes((int) config('booking.hold_minutes', 15));
+    }
+
+    public function releaseExpiredHolds(?string $date = null): int
+    {
+        return Booking::query()
+            ->where('status', BookingStatus::Pending->value)
+            ->whereNotNull('held_until')
+            ->where('held_until', '<', now())
+            ->when($date, fn (Builder $query) => $query->whereDate('booking_date', $date))
+            ->update([
+                'status' => BookingStatus::Expired->value,
+                'payment_status' => PaymentStatus::Expired->value,
+                'cancelled_at' => now(),
+            ]);
+    }
+
+    /**
+     * @return Builder<Booking>
+     */
+    public function conflictingBookings(string $date, string $startsAt, string $endsAt, ?Booking $ignoreBooking = null): Builder
+    {
+        return Booking::query()
             ->active()
             ->whereDate('booking_date', $date)
             ->when($ignoreBooking, fn ($query) => $query->whereKeyNot($ignoreBooking->id))
             ->where('starts_at', '<', $endsAt)
-            ->where('ends_at', '>', $startsAt)
-            ->exists();
+            ->where('ends_at', '>', $startsAt);
     }
 
     /**
@@ -41,6 +82,8 @@ class BookingSchedule
      */
     public function slotsForDate(string $date, StudioSetting $studio): Collection
     {
+        $this->releaseExpiredHolds($date);
+
         $open = CarbonImmutable::parse($date.' '.$studio->opens_at);
         $close = CarbonImmutable::parse($date.' '.$studio->closes_at);
         $duration = $studio->slot_duration_minutes;
@@ -62,7 +105,7 @@ class BookingSchedule
                 return [
                     'time' => $start->format('H:i'),
                     'endsAt' => $end->format('H:i'),
-                    'label' => $booking ? $booking->status->label() : 'Tersedia',
+                    'label' => $booking ? $this->slotLabel($booking) : 'Tersedia',
                     'price' => 'Rp '.number_format($studio->hourly_rate * ($duration / 60), 0, ',', '.'),
                     'available' => ! $booking,
                     'booking' => $booking ? [
@@ -73,5 +116,14 @@ class BookingSchedule
                 ];
             })
             ->values();
+    }
+
+    private function slotLabel(Booking $booking): string
+    {
+        if ($booking->status === BookingStatus::Pending && $booking->held_until) {
+            return 'Ditahan sementara';
+        }
+
+        return $booking->status->label();
     }
 }

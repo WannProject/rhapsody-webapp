@@ -12,9 +12,9 @@ use App\Models\Booking;
 use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
 use App\Services\PaymentService;
-use App\Support\BookingWhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class BookingController extends Controller
@@ -31,29 +31,45 @@ class BookingController extends Controller
         $startsAt = $validated['starts_at'];
         $endsAt = $schedule->endsAt($studio, $startsAt);
 
-        $booking = DB::transaction(fn () => Booking::create([
-            'user_id' => $user->id,
-            'payment_method_id' => $validated['payment_method_id'],
-            'customer_name' => $user->name,
-            'customer_email' => $user->email,
-            'customer_phone' => ($validated['customer_phone'] ?? null) ?: $user->phone,
-            'booking_date' => $validated['booking_date'],
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-            'total_price' => $schedule->totalPrice($studio, $startsAt, $endsAt),
-            'status' => BookingStatus::Pending,
-            'payment_status' => PaymentStatus::Unpaid,
-            'notes' => $validated['notes'] ?? null,
-        ]));
+        $booking = DB::transaction(function () use ($schedule, $studio, $validated, $startsAt, $endsAt, $user) {
+            StudioSetting::query()->whereKey($studio->id)->lockForUpdate()->firstOrFail();
+
+            if (! $schedule->lockSlotAvailable($validated['booking_date'], $startsAt, $endsAt)) {
+                throw ValidationException::withMessages([
+                    'starts_at' => __('Slot waktu ini sudah dibooking.'),
+                ]);
+            }
+
+            return Booking::create([
+                'user_id' => $user->id,
+                'payment_method_id' => $validated['payment_method_id'],
+                'customer_name' => $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => ($validated['customer_phone'] ?? null) ?: $user->phone,
+                'booking_date' => $validated['booking_date'],
+                'starts_at' => $startsAt,
+                'ends_at' => $endsAt,
+                'total_price' => $schedule->totalPrice($studio, $startsAt, $endsAt),
+                'status' => BookingStatus::Pending,
+                'payment_status' => PaymentStatus::Unpaid,
+                'held_until' => $schedule->holdUntil(),
+                'notes' => $validated['notes'] ?? null,
+            ]);
+        });
+
+        $payment = null;
 
         try {
-            $this->paymentService->createPaymentForBooking($booking);
+            $payment = $this->paymentService->createPaymentForBooking($booking);
         } catch (\Throwable) {
         }
 
         $user->forceFill(['phone' => $booking->customer_phone])->save();
-        BookingWhatsApp::bookingCreated($booking);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil dibuat.')]);
+
+        if ($payment?->payment_link_url) {
+            return redirect()->away($payment->payment_link_url);
+        }
 
         return to_route('bookings', ['date' => $booking->booking_date->toDateString()]);
     }
@@ -65,15 +81,28 @@ class BookingController extends Controller
         $startsAt = $validated['starts_at'];
         $endsAt = $schedule->endsAt($studio, $startsAt);
 
-        $booking->update([
-            'payment_method_id' => $validated['payment_method_id'],
-            'customer_phone' => $validated['customer_phone'] ?? $booking->customer_phone,
-            'booking_date' => $validated['booking_date'],
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-            'total_price' => $schedule->totalPrice($studio, $startsAt, $endsAt),
-            'notes' => $validated['notes'] ?? $booking->notes,
-        ]);
+        DB::transaction(function () use ($booking, $schedule, $studio, $validated, $startsAt, $endsAt) {
+            StudioSetting::query()->whereKey($studio->id)->lockForUpdate()->firstOrFail();
+
+            if (! $schedule->lockSlotAvailable($validated['booking_date'], $startsAt, $endsAt, $booking)) {
+                throw ValidationException::withMessages([
+                    'starts_at' => __('Slot waktu ini sudah dibooking.'),
+                ]);
+            }
+
+            $booking->update([
+                'payment_method_id' => $validated['payment_method_id'],
+                'customer_phone' => $validated['customer_phone'] ?? $booking->customer_phone,
+                'booking_date' => $validated['booking_date'],
+                'starts_at' => $startsAt,
+                'ends_at' => $endsAt,
+                'total_price' => $schedule->totalPrice($studio, $startsAt, $endsAt),
+                'held_until' => $booking->status === BookingStatus::Pending
+                    ? $schedule->holdUntil()
+                    : $booking->held_until,
+                'notes' => $validated['notes'] ?? $booking->notes,
+            ]);
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil diperbarui.')]);
 
@@ -95,9 +124,9 @@ class BookingController extends Controller
             'cancelled_at' => $status === BookingStatus::Cancelled
                 ? now()
                 : $booking->cancelled_at,
+            'held_until' => $status === BookingStatus::Pending ? $booking->held_until : null,
         ]);
 
-        BookingWhatsApp::statusChanged($booking->fresh());
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Status booking diperbarui.')]);
 
         return to_route('bookings', ['date' => $booking->booking_date->toDateString()]);
@@ -119,9 +148,9 @@ class BookingController extends Controller
                 'status' => BookingStatus::Cancelled,
                 'payment_status' => PaymentStatus::Cancelled,
                 'cancelled_at' => now(),
+                'held_until' => null,
             ]);
 
-            BookingWhatsApp::statusChanged($booking->fresh());
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking dibatalkan.')]);
         }
 

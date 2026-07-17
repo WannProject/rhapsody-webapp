@@ -9,6 +9,7 @@ export type RhapsodyView =
     | 'success'
     | 'admin'
     | 'reports'
+    | 'studio-data'
     | 'clients'
     | 'platform-fees'
     | 'platform-wallet';

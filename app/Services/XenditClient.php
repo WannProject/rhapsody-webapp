@@ -43,6 +43,11 @@ class XenditClient
         return $this->post('/v2/platforms/accounts/'.$accountId.'/invoices', $invoiceData);
     }
 
+    public function createInvoice(array $invoiceData): array
+    {
+        return $this->post('/v2/invoices', $invoiceData);
+    }
+
     public function createPaymentRequest(array $data): array
     {
         return $this->post('/payment_requests', $data);
@@ -75,6 +80,11 @@ class XenditClient
         }
 
         return hash_equals($verificationToken, $xenditToken);
+    }
+
+    public function isConfigured(): bool
+    {
+        return filled($this->secretKey);
     }
 
     private function post(string $endpoint, array $data = []): array

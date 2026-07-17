@@ -8,6 +8,8 @@ enum BookingStatus: string
     case Confirmed = 'confirmed';
     case Cancelled = 'cancelled';
     case Completed = 'completed';
+    case Expired = 'expired';
+    case Refunded = 'refunded';
 
     public function label(): string
     {
@@ -16,6 +18,8 @@ enum BookingStatus: string
             self::Confirmed => 'Terkonfirmasi',
             self::Cancelled => 'Dibatalkan',
             self::Completed => 'Selesai',
+            self::Expired => 'Kedaluwarsa',
+            self::Refunded => 'Refunded',
         };
     }
 }
