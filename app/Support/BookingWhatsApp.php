@@ -32,14 +32,15 @@ class BookingWhatsApp
 
     private static function paymentPaidMessage(Booking $booking): string
     {
+        $user = $booking->user;
         $startsAt = self::time($booking->starts_at);
         $endsAt = self::time($booking->ends_at);
 
         return implode("\n", [
             'BOOKING STUDIO BARU',
-            'Nama Band: '.$booking->customer_name,
-            'Nama Pemesan: '.$booking->customer_name,
-            'Nomor WhatsApp: '.($booking->customer_phone ?: '-'),
+            'Nama Band: '.($user->band_name ?: '-'),
+            'Nama Pemesan: '.($user->contact_name ?: $booking->customer_name),
+            'Nomor WhatsApp: '.($user->whatsapp_number ?: $booking->customer_phone ?: '-'),
             'Tanggal Booking: '.$booking->booking_date->format('d/m/Y'),
             "Jam Booking: {$startsAt} - {$endsAt}",
             'Durasi: '.self::duration($booking),

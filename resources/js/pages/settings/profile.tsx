@@ -74,6 +74,44 @@ export default function Profile(
 
                             <div className="grid gap-2">
                                 <Label
+                                    htmlFor="band_name"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Nama Band
+                                </Label>
+                                <Input
+                                    id="band_name"
+                                    defaultValue={
+                                        (auth.user.band_name as string) ?? ''
+                                    }
+                                    name="band_name"
+                                    required
+                                    placeholder="Nama band Anda"
+                                />
+                                <InputError message={errors.band_name} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label
+                                    htmlFor="contact_name"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Nama Pemesan
+                                </Label>
+                                <Input
+                                    id="contact_name"
+                                    defaultValue={
+                                        (auth.user.contact_name as string) ?? ''
+                                    }
+                                    name="contact_name"
+                                    required
+                                    placeholder="Nama pemesan (penanggung jawab)"
+                                />
+                                <InputError message={errors.contact_name} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label
                                     htmlFor="email"
                                     className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
                                 >
@@ -93,20 +131,24 @@ export default function Profile(
 
                             <div className="grid gap-2">
                                 <Label
-                                    htmlFor="phone"
+                                    htmlFor="whatsapp_number"
                                     className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
                                 >
                                     WhatsApp Number
                                 </Label>
                                 <Input
-                                    id="phone"
+                                    id="whatsapp_number"
                                     type="tel"
-                                    defaultValue={auth.user.phone ?? ''}
-                                    name="phone"
+                                    defaultValue={
+                                        (auth.user.whatsapp_number as string) ??
+                                        ''
+                                    }
+                                    name="whatsapp_number"
+                                    required
                                     autoComplete="tel"
                                     placeholder="62812xxxxxxx"
                                 />
-                                <InputError message={errors.phone} />
+                                <InputError message={errors.whatsapp_number} />
                             </div>
 
                             {/* @chisel-email-verification */}

@@ -5,9 +5,11 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Concerns\HasTeams;
 use App\Enums\UserRole;
+use App\Support\WhatsAppNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,6 +25,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property UserRole $role
  * @property string|null $phone
+ * @property string|null $band_name
+ * @property string|null $contact_name
+ * @property string|null $whatsapp_number
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -39,7 +44,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read Collection<int, Membership> $teamMemberships
  * @property-read Collection<int, Team> $teams
  */
-#[Fillable(['name', 'email', 'role', 'phone', 'password', 'current_team_id'])]
+#[Fillable(['name', 'email', 'role', 'phone', 'band_name', 'contact_name', 'whatsapp_number', 'password', 'current_team_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -70,6 +75,26 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === UserRole::SuperAdmin;
+    }
+
+    /**
+     * Normalize the WhatsApp number whenever it is set.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function whatsappNumber(): Attribute
+    {
+        return Attribute::set(fn (?string $value) => WhatsAppNumber::normalize($value));
+    }
+
+    /**
+     * Normalize the legacy phone field whenever it is set.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function phone(): Attribute
+    {
+        return Attribute::set(fn (?string $value) => WhatsAppNumber::normalize($value));
     }
 
     /**

@@ -9,10 +9,12 @@ use App\Http\Requests\Admin\UpdateBookingStatusRequest;
 use App\Http\Requests\Bookings\StoreBookingRequest;
 use App\Http\Requests\Bookings\UpdateBookingRequest;
 use App\Models\Booking;
+use App\Models\Equipment;
 use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -31,7 +33,7 @@ class BookingController extends Controller
         $startsAt = $validated['starts_at'];
         $endsAt = $schedule->endsAt($studio, $startsAt);
 
-        $booking = DB::transaction(function () use ($schedule, $studio, $validated, $startsAt, $endsAt, $user) {
+        $booking = DB::transaction(function () use ($schedule, $studio, $validated, $startsAt, $endsAt, $user, $request) {
             StudioSetting::query()->whereKey($studio->id)->lockForUpdate()->firstOrFail();
 
             if (! $schedule->lockSlotAvailable($validated['booking_date'], $startsAt, $endsAt)) {
@@ -40,21 +42,38 @@ class BookingController extends Controller
                 ]);
             }
 
-            return Booking::create([
+            $equipmentSelection = $this->normalizeEquipmentSelection($validated['equipment'] ?? []);
+            $equipments = Equipment::query()
+                ->where('is_active', true)
+                ->whereIn('id', array_keys($equipmentSelection))
+                ->get()
+                ->keyBy('id');
+
+            $basePrice = $schedule->totalPrice($studio, $startsAt, $endsAt);
+            $additionalPrice = $schedule->equipmentAdditionalPrice($equipments, $equipmentSelection);
+
+            $booking = Booking::create([
                 'user_id' => $user->id,
                 'payment_method_id' => $validated['payment_method_id'],
-                'customer_name' => $user->name,
+                'customer_name' => $user->contact_name ?? $user->band_name ?? $user->name,
                 'customer_email' => $user->email,
-                'customer_phone' => ($validated['customer_phone'] ?? null) ?: $user->phone,
+                'customer_phone' => ($validated['customer_phone'] ?? null) ?: $user->whatsapp_number ?: $user->phone,
                 'booking_date' => $validated['booking_date'],
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
-                'total_price' => $schedule->totalPrice($studio, $startsAt, $endsAt),
+                'base_price' => $basePrice,
+                'additional_price' => $additionalPrice,
+                'total_price' => $basePrice + $additionalPrice,
                 'status' => BookingStatus::Pending,
                 'payment_status' => PaymentStatus::Unpaid,
                 'held_until' => $schedule->holdUntil(),
                 'notes' => $validated['notes'] ?? null,
+                'customer_equipment_notes' => $validated['customer_equipment_notes'] ?? null,
             ]);
+
+            $this->syncEquipment($booking, $equipments, $equipmentSelection);
+
+            return $booking;
         });
 
         $payment = null;
@@ -64,7 +83,7 @@ class BookingController extends Controller
         } catch (\Throwable) {
         }
 
-        $user->forceFill(['phone' => $booking->customer_phone])->save();
+        $user->forceFill(['whatsapp_number' => $booking->customer_phone])->save();
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil dibuat.')]);
 
         if ($payment?->payment_link_url) {
@@ -81,7 +100,7 @@ class BookingController extends Controller
         $startsAt = $validated['starts_at'];
         $endsAt = $schedule->endsAt($studio, $startsAt);
 
-        DB::transaction(function () use ($booking, $schedule, $studio, $validated, $startsAt, $endsAt) {
+        DB::transaction(function () use ($booking, $schedule, $studio, $validated, $startsAt, $endsAt, $request) {
             StudioSetting::query()->whereKey($studio->id)->lockForUpdate()->firstOrFail();
 
             if (! $schedule->lockSlotAvailable($validated['booking_date'], $startsAt, $endsAt, $booking)) {
@@ -90,18 +109,33 @@ class BookingController extends Controller
                 ]);
             }
 
+            $equipmentSelection = $this->normalizeEquipmentSelection($validated['equipment'] ?? []);
+            $equipments = Equipment::query()
+                ->where('is_active', true)
+                ->whereIn('id', array_keys($equipmentSelection))
+                ->get()
+                ->keyBy('id');
+
+            $basePrice = $schedule->totalPrice($studio, $startsAt, $endsAt);
+            $additionalPrice = $schedule->equipmentAdditionalPrice($equipments, $equipmentSelection);
+
             $booking->update([
                 'payment_method_id' => $validated['payment_method_id'],
                 'customer_phone' => $validated['customer_phone'] ?? $booking->customer_phone,
                 'booking_date' => $validated['booking_date'],
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
-                'total_price' => $schedule->totalPrice($studio, $startsAt, $endsAt),
+                'base_price' => $basePrice,
+                'additional_price' => $additionalPrice,
+                'total_price' => $basePrice + $additionalPrice,
                 'held_until' => $booking->status === BookingStatus::Pending
                     ? $schedule->holdUntil()
                     : $booking->held_until,
                 'notes' => $validated['notes'] ?? $booking->notes,
+                'customer_equipment_notes' => $validated['customer_equipment_notes'] ?? $booking->customer_equipment_notes,
             ]);
+
+            $this->syncEquipment($booking, $equipments, $equipmentSelection);
         });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil diperbarui.')]);
@@ -155,5 +189,63 @@ class BookingController extends Controller
         }
 
         return to_route('bookings', ['date' => $date]);
+    }
+
+    /**
+     * Coerce the equipment input into {equipment_id => quantity} ints, dropping zero/negatives.
+     *
+     * @param  array<mixed>  $input
+     * @return array<int, int>
+     */
+    private function normalizeEquipmentSelection(array $input): array
+    {
+        $cleaned = [];
+
+        foreach ($input as $id => $quantity) {
+            $id = (int) $id;
+            $quantity = (int) $quantity;
+
+            if ($id <= 0 || $quantity <= 0) {
+                continue;
+            }
+
+            $cleaned[$id] = $quantity;
+        }
+
+        return $cleaned;
+    }
+
+    /**
+     * @param  array<int, int>  $selection
+     * @param  Collection<int, Equipment>  $equipments
+     */
+    private function syncEquipment(Booking $booking, Collection $equipments, array $selection): void
+    {
+        if ($selection === []) {
+            $booking->equipments()->detach();
+
+            return;
+        }
+
+        $pivot = [];
+
+        foreach ($selection as $id => $quantity) {
+            $equipment = $equipments->get($id);
+            if (! $equipment) {
+                continue;
+            }
+
+            $allowed = min($quantity, $equipment->stock);
+            if ($allowed <= 0) {
+                continue;
+            }
+
+            $pivot[$id] = [
+                'quantity' => $allowed,
+                'unit_price' => $equipment->additional_price,
+            ];
+        }
+
+        $booking->equipments()->sync($pivot);
     }
 }

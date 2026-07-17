@@ -6,6 +6,9 @@ export type User = {
     email: string;
     role: UserRoleType;
     phone?: string | null;
+    band_name?: string | null;
+    contact_name?: string | null;
+    whatsapp_number?: string | null;
     avatar?: string;
     email_verified_at: string | null;
     /* @chisel-2fa */

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Equipment;
 use App\Models\PaymentMethod;
 use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
@@ -19,8 +20,14 @@ class BookingPageController extends Controller
         $selectedDate = $request->query('date', now()->toDateString());
         $studio = StudioSetting::active();
 
+        $equipments = Equipment::query()
+            ->where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
         $bookingsQuery = Booking::query()
-            ->with(['paymentMethod', 'user', 'payment'])
+            ->with(['paymentMethod', 'user', 'payment', 'equipments'])
             ->latest('booking_date')
             ->latest('starts_at');
 
@@ -36,6 +43,14 @@ class BookingPageController extends Controller
                 'hourlyRate' => $studio->hourly_rate,
             ],
             'scheduleSlots' => $schedule->slotsForDate($selectedDate, $studio),
+            'equipments' => $equipments->map(fn (Equipment $equipment) => [
+                'id' => $equipment->id,
+                'name' => $equipment->name,
+                'category' => $equipment->category,
+                'stock' => $equipment->stock,
+                'additionalPrice' => $equipment->additional_price,
+                'isMicrophone' => $equipment->category === 'microphone',
+            ]),
             'paymentMethods' => PaymentMethod::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -74,6 +89,8 @@ class BookingPageController extends Controller
                     'bookingDate' => $booking->booking_date->toDateString(),
                     'startsAt' => substr($booking->starts_at, 0, 5),
                     'endsAt' => substr($booking->ends_at, 0, 5),
+                    'basePrice' => $booking->base_price,
+                    'additionalPrice' => $booking->additional_price,
                     'totalPrice' => $booking->total_price,
                     'status' => $booking->status->value,
                     'statusLabel' => $booking->status->label(),
@@ -82,8 +99,16 @@ class BookingPageController extends Controller
                     'paymentMethodId' => $booking->payment_method_id,
                     'paymentMethodName' => $booking->paymentMethod?->name,
                     'notes' => $booking->notes,
+                    'customerEquipmentNotes' => $booking->customer_equipment_notes,
                     'adminNotes' => $booking->admin_notes,
                     'paymentLinkUrl' => $booking->payment?->payment_link_url,
+                    'equipments' => $booking->equipments->map(fn (Equipment $equipment) => [
+                        'id' => $equipment->id,
+                        'name' => $equipment->name,
+                        'category' => $equipment->category,
+                        'quantity' => (int) $equipment->pivot->quantity,
+                        'unitPrice' => (int) $equipment->pivot->unit_price,
+                    ]),
                 ]),
             'stats' => $isAdmin
                 ? [

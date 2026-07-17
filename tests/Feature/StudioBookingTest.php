@@ -63,7 +63,7 @@ class StudioBookingTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
-            'phone' => '628123456789',
+            'whatsapp_number' => '628123456789',
         ]);
 
         $this

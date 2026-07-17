@@ -53,7 +53,7 @@ class PaymentService
 
         DB::transaction(function () use ($payment, $webhookPayload, &$bookingForNotification) {
             $lockedPayment = Payment::query()
-                ->with('booking')
+                ->with('booking.user')
                 ->lockForUpdate()
                 ->findOrFail($payment->id);
 

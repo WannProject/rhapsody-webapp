@@ -21,6 +21,13 @@ type Slot = {
     price: string;
     label: string;
 };
+type BookingEquipment = {
+    id: number;
+    name: string;
+    category: string;
+    quantity: number;
+    unitPrice: number;
+};
 type BookingItem = {
     code: string;
     customerName: string;
@@ -29,6 +36,8 @@ type BookingItem = {
     bookingDate: string;
     startsAt: string;
     endsAt: string;
+    basePrice: number;
+    additionalPrice: number;
     totalPrice: number;
     status: string;
     statusLabel: string;
@@ -37,8 +46,18 @@ type BookingItem = {
     paymentMethodId: number | null;
     paymentMethodName: string | null;
     notes: string | null;
+    customerEquipmentNotes: string | null;
     adminNotes: string | null;
     paymentLinkUrl: string | null;
+    equipments: BookingEquipment[];
+};
+type EquipmentOption = {
+    id: number;
+    name: string;
+    category: string;
+    stock: number;
+    additionalPrice: number;
+    isMicrophone: boolean;
 };
 type PaymentMethodItem = {
     id: number;
@@ -69,6 +88,7 @@ type Props = {
         hourlyRate: number;
     };
     scheduleSlots: Slot[];
+    equipments: EquipmentOption[];
     paymentMethods: PaymentMethodItem[];
     allPaymentMethods: PaymentMethodItem[];
     bookings: BookingItem[];
@@ -110,6 +130,7 @@ export default function BookingsPage() {
         allPaymentMethods,
         selectedDate,
         auth,
+        equipments,
     } = props;
     const availableSlots = scheduleSlots.filter((s) => s.available);
 
@@ -170,7 +191,7 @@ export default function BookingsPage() {
                                 action="/bookings"
                                 method="post"
                                 className="grid gap-4 rounded-lg border border-border bg-card p-5 md:grid-cols-2"
-                                resetOnSuccess={['notes']}
+                                resetOnSuccess={['notes', 'customer_equipment_notes']}
                             >
                                 {({ processing, errors }) => (
                                     <>
@@ -257,12 +278,40 @@ export default function BookingsPage() {
                                                 name="customer_phone"
                                                 type="tel"
                                                 defaultValue={
-                                                    auth.user.phone ?? ''
+                                                    (auth.user.whatsapp_number as
+                                                        | string
+                                                        | null) ??
+                                                    auth.user.phone ??
+                                                    ''
                                                 }
                                                 placeholder="62812xxxxxxx"
                                             />
                                             <InputError
                                                 message={errors.customer_phone}
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <EquipmentPicker
+                                                equipments={equipments}
+                                                errors={errors}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2 md:col-span-2">
+                                            <Label
+                                                htmlFor="customer_equipment_notes"
+                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                            >
+                                                Alat Tambahan Sendiri
+                                            </Label>
+                                            <Input
+                                                id="customer_equipment_notes"
+                                                name="customer_equipment_notes"
+                                                placeholder="Contoh: gitar sendiri, pedal efek"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors.customer_equipment_notes
+                                                }
                                             />
                                         </div>
                                         <div className="grid gap-2 md:col-span-2">
@@ -342,6 +391,114 @@ export default function BookingsPage() {
     );
 }
 
+function EquipmentPicker({
+    equipments,
+    errors,
+}: {
+    equipments: EquipmentOption[];
+    errors: Record<string, string>;
+}) {
+    if (equipments.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-4">
+            <div>
+                <p className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                    Alat Studio
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground/80">
+                    Centang alat yang dipakai. Mikrofon bisa 0-2 unit.
+                </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+                {equipments.map((eq) => {
+                    if (eq.isMicrophone) {
+                        return (
+                            <div
+                                key={eq.id}
+                                className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2"
+                            >
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-primary">
+                                        {eq.name}
+                                    </p>
+                                    {eq.additionalPrice > 0 && (
+                                        <p className="text-[11px] text-muted-foreground">
+                                            + Rp{' '}
+                                            {eq.additionalPrice.toLocaleString(
+                                                'id-ID',
+                                            )}{' '}
+                                            / unit
+                                        </p>
+                                    )}
+                                </div>
+                                <Select
+                                    name={`equipment[${eq.id}]`}
+                                    defaultValue="0"
+                                >
+                                    <SelectTrigger className="w-24">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from(
+                                            { length: eq.stock + 1 },
+                                            (_, i) => i,
+                                        ).map((qty) => (
+                                            <SelectItem
+                                                key={qty}
+                                                value={String(qty)}
+                                            >
+                                                {qty}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <label
+                            key={eq.id}
+                            className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2"
+                        >
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-primary">
+                                    {eq.name}
+                                </p>
+                                {eq.additionalPrice > 0 && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                        + Rp{' '}
+                                        {eq.additionalPrice.toLocaleString(
+                                            'id-ID',
+                                        )}
+                                    </p>
+                                )}
+                            </div>
+                            <Checkbox
+                                name={`equipment[${eq.id}]`}
+                                value="1"
+                            />
+                        </label>
+                    );
+                })}
+            </div>
+            {Object.entries(errors).some(([key]) =>
+                key.startsWith('equipment.'),
+            ) && (
+                <p className="text-xs font-semibold text-destructive">
+                    {Object.entries(errors)
+                        .filter(([key]) => key.startsWith('equipment.'))
+                        .map(([, msg]) => msg)
+                        .join(' · ')}
+                </p>
+            )}
+        </div>
+    );
+}
+
 function BookingCard({
     booking: b,
     isAdmin,
@@ -378,6 +535,24 @@ function BookingCard({
                             "{b.notes}"
                         </p>
                     )}
+                    {b.equipments.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                            {b.equipments.map((eq) => (
+                                <span
+                                    key={eq.id}
+                                    className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide"
+                                >
+                                    {eq.name}
+                                    {eq.quantity > 1 ? ` ×${eq.quantity}` : ''}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    {b.customerEquipmentNotes && (
+                        <p className="mt-1 text-xs text-muted-foreground/80">
+                            Alat sendiri: {b.customerEquipmentNotes}
+                        </p>
+                    )}
                     {b.adminNotes && (
                         <p className="mt-1 text-xs text-muted-foreground">
                             Admin: {b.adminNotes}
@@ -394,6 +569,12 @@ function BookingCard({
                     <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-wider text-primary-foreground uppercase">
                         Rp {b.totalPrice.toLocaleString('id-ID')}
                     </span>
+                    {b.additionalPrice > 0 && (
+                        <span className="rounded-full border border-border bg-card px-3 py-1 text-[10px] tracking-wider text-muted-foreground uppercase">
+                            Base Rp {b.basePrice.toLocaleString('id-ID')} +
+                            Alat Rp {b.additionalPrice.toLocaleString('id-ID')}
+                        </span>
+                    )}
                     {b.paymentLinkUrl && b.paymentStatus !== 'paid' && (
                         <a
                             href={b.paymentLinkUrl}

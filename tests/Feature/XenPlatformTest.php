@@ -336,9 +336,9 @@ class XenPlatformTest extends TestCase
         Queue::assertPushed(SendFonnteMessage::class, 1);
         Queue::assertPushed(SendFonnteMessage::class, fn (SendFonnteMessage $job) => $job->target === '628700001111'
             && str_contains($job->message, 'BOOKING STUDIO BARU')
-            && str_contains($job->message, 'Nama Band: '.$booking->customer_name)
-            && str_contains($job->message, 'Nama Pemesan: '.$booking->customer_name)
-            && str_contains($job->message, 'Nomor WhatsApp: '.$booking->customer_phone)
+            && str_contains($job->message, 'Nama Band: '.$booking->user->band_name)
+            && str_contains($job->message, 'Nama Pemesan: '.$booking->user->contact_name)
+            && str_contains($job->message, 'Nomor WhatsApp: '.$booking->user->whatsapp_number)
             && str_contains($job->message, 'Tanggal Booking: '.$booking->booking_date->format('d/m/Y'))
             && str_contains($job->message, 'Jam Booking: 09:00 - 11:00')
             && str_contains($job->message, 'Durasi: 2 jam')

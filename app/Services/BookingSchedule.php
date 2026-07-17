@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Booking;
+use App\Models\Equipment;
 use App\Models\StudioSetting;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +27,38 @@ class BookingSchedule
         $hours = max($start->diffInMinutes($end) / 60, 0);
 
         return (int) round($hours * $studio->hourly_rate);
+    }
+
+    /**
+     * Calculate the equipment additional price for a selection of equipment with quantities.
+     *
+     * @param  Collection<int, Equipment>  $equipments  keyed by id
+     * @param  array<int, int>  $quantities  equipment_id => quantity
+     */
+    public function equipmentAdditionalPrice(Collection $equipments, array $quantities): int
+    {
+        $total = 0;
+
+        foreach ($quantities as $equipmentId => $quantity) {
+            $quantity = (int) $quantity;
+            if ($quantity <= 0) {
+                continue;
+            }
+
+            $equipment = $equipments->firstWhere('id', (int) $equipmentId);
+            if (! $equipment || ! $equipment->is_active) {
+                continue;
+            }
+
+            $allowed = min($quantity, $equipment->stock);
+            if ($allowed <= 0) {
+                continue;
+            }
+
+            $total += $allowed * (int) $equipment->additional_price;
+        }
+
+        return $total;
     }
 
     public function isSlotAvailable(string $date, string $startsAt, string $endsAt, ?Booking $ignoreBooking = null): bool

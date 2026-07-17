@@ -14,11 +14,18 @@ export function RhapsodySidebar() {
         if (
             item.superAdminRequired &&
             (!isAuth || props.auth.user?.role !== UserRole.SuperAdmin)
-        )
-            return false;
-        if (item.adminRequired && (!isAuth || !isAdminRole))
-            return false;
-        if (item.authRequired && !isAuth) return false;
+        ) {
+return false;
+}
+
+        if (item.adminRequired && (!isAuth || !isAdminRole)) {
+return false;
+}
+
+        if (item.authRequired && !isAuth) {
+return false;
+}
+
         return true;
     });
 

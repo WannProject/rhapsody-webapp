@@ -1,4 +1,5 @@
-import { Bell, LogIn, LogOut, Menu, Search, UserPlus } from 'lucide-react';
+import type { Search} from 'lucide-react';
+import { Bell, LogIn, LogOut, Menu, UserPlus } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { BrandMark } from '@/components/rhapsody/brand-mark';
 import { login } from '@/routes';

@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('failure_reason')->nullable();
             $table->json('raw_webhook_payload')->nullable();
             $table->timestamp('paid_at')->nullable();
+            $table->timestamp('paid_notification_sent_at')->nullable();
             $table->timestamp('expired_at')->nullable();
             $table->timestamps();
 

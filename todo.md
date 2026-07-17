@@ -3,8 +3,9 @@
 Dokumen ini diperbarui dari audit SOP "Aplikasi Penyewaan Studio Musik" terhadap codebase saat ini.
 
 Status verifikasi terakhir:
-- `php artisan test`: lulus, 137 tests / 529 assertions.
+- `php artisan test`: lulus, 156 tests / 599 assertions.
 - `npm run build`: lulus.
+- `npx tsc --noEmit`: lulus.
 - Codebase sudah di-index ke `.codebase-memory/graph.db.zst`.
 
 ## Prioritas P0 - Harus Dikerjakan Dulu
@@ -64,24 +65,24 @@ Status verifikasi terakhir:
 
 ### 5. Customer profile dan registrasi
 
-- [ ] Buat migration/model `CustomerProfile` atau tambahkan struktur setara.
-- [ ] Simpan data registrasi SOP:
-  - [ ] Nama Band.
-  - [ ] Nama Pemesan.
-  - [ ] Email.
-  - [ ] Nomor WhatsApp.
-  - [ ] Password.
-- [ ] Update form register agar field sesuai SOP, bukan hanya `name`, `email`, `phone`.
-- [ ] Normalisasi nomor WhatsApp ke format konsisten.
-- [ ] Pastikan email tetap unique.
-- [ ] Pastikan password tetap disimpan hashed.
-- [ ] Update halaman profile untuk mengelola Nama Band, Nama Pemesan, dan WhatsApp.
-- [ ] Tambahkan test registrasi customer dengan nama band.
+- [x] Buat migration/model `CustomerProfile` atau tambahkan struktur setara.
+- [x] Simpan data registrasi SOP:
+  - [x] Nama Band.
+  - [x] Nama Pemesan.
+  - [x] Email.
+  - [x] Nomor WhatsApp.
+  - [x] Password.
+- [x] Update form register agar field sesuai SOP, bukan hanya `name`, `email`, `phone`.
+- [x] Normalisasi nomor WhatsApp ke format konsisten.
+- [x] Pastikan email tetap unique.
+- [x] Pastikan password tetap disimpan hashed.
+- [x] Update halaman profile untuk mengelola Nama Band, Nama Pemesan, dan WhatsApp.
+- [x] Tambahkan test registrasi customer dengan nama band.
 
 ### 6. Equipment dan alat booking
 
 - [x] Buat migration/model `Equipment`.
-- [ ] Buat migration/model pivot `BookingEquipment`.
+- [x] Buat migration/model pivot `BookingEquipment`.
 - [x] Seed data alat SOP:
   - [x] Gitar listrik 1.
   - [x] Gitar listrik 2.
@@ -91,15 +92,15 @@ Status verifikasi terakhir:
   - [x] Drum akustik.
   - [x] Mikrofon vokal.
 - [x] Tambahkan field `stock`, `additional_price`, dan `is_active` untuk alat studio.
-- [ ] Booking form alat harus benar-benar mengirim pilihan ke backend.
-- [ ] Gunakan checkbox untuk alat milik studio.
-- [ ] Mikrofon vokal memakai pilihan jumlah 0 sampai 2.
-- [ ] Validasi mikrofon maksimal 2 di backend.
-- [ ] Tambahkan field teks untuk alat tambahan milik customer.
-- [ ] Simpan snapshot harga alat pada booking.
-- [ ] Tampilkan daftar alat di detail pesanan customer dan admin.
-- [ ] Tambahkan test validasi mikrofon maksimal 2.
-- [ ] Tambahkan test alat booking tersimpan dan tampil di detail.
+- [x] Booking form alat harus benar-benar mengirim pilihan ke backend.
+- [x] Gunakan checkbox untuk alat milik studio.
+- [x] Mikrofon vokal memakai pilihan jumlah 0 sampai 2.
+- [x] Validasi mikrofon maksimal 2 di backend.
+- [x] Tambahkan field teks untuk alat tambahan milik customer.
+- [x] Simpan snapshot harga alat pada booking.
+- [x] Tampilkan daftar alat di detail pesanan customer dan admin.
+- [x] Tambahkan test validasi mikrofon maksimal 2.
+- [x] Tambahkan test alat booking tersimpan dan tampil di detail.
 
 ### 7. Studio, harga, dan time slot
 
@@ -323,9 +324,9 @@ Status verifikasi terakhir:
 
 ## Testing Tambahan Wajib
 
-- [ ] Feature test: registrasi customer dengan Nama Band dan WhatsApp.
-- [ ] Feature test: customer booking dengan pilihan alat.
-- [ ] Feature test: mikrofon lebih dari 2 ditolak.
+- [x] Feature test: registrasi customer dengan Nama Band dan WhatsApp.
+- [x] Feature test: customer booking dengan pilihan alat.
+- [x] Feature test: mikrofon lebih dari 2 ditolak.
 - [x] Feature test: booking membuat invoice Xendit.
 - [x] Feature test: customer diarahkan atau mendapat payment URL Xendit.
 - [x] Feature test: webhook paid mengubah payment paid dan booking confirmed.
@@ -335,8 +336,8 @@ Status verifikasi terakhir:
 - [ ] Feature test: superadmin bisa filter pesanan berdasarkan tanggal/nama band/status.
 - [x] Feature test: superadmin update harga tidak mengubah booking lama.
 - [x] Feature test: withdrawal non-pending tidak diproses ulang.
-- [ ] Unit test: total harga = base price + additional equipment price.
-- [ ] Unit test: normalisasi nomor WhatsApp.
+- [x] Unit test: total harga = base price + additional equipment price.
+- [x] Unit test: normalisasi nomor WhatsApp.
 - [ ] Unit test: slot availability mengabaikan cancelled/expired/refunded.
 
 ## Deployment Checklist
