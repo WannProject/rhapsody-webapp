@@ -92,7 +92,7 @@ class PlatformWalletService
 
     public function processWithdrawal(PlatformWithdrawal $withdrawal): void
     {
-        if (! $withdrawal->status === WithdrawalStatus::Pending) {
+        if ($withdrawal->status !== WithdrawalStatus::Pending) {
             return;
         }
 

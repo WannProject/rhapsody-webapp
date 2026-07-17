@@ -7,18 +7,25 @@ import type { Auth } from '@/types';
 export function RhapsodySidebar() {
     const { props, url } = usePage<{ auth: Auth }>();
     const isAuth = !!props.auth.user;
+    const isAdminRole =
+        props.auth.user?.role === UserRole.Admin ||
+        props.auth.user?.role === UserRole.SuperAdmin;
     const visibleItems = navItems.filter((item) => {
         if (
             item.superAdminRequired &&
             (!isAuth || props.auth.user?.role !== UserRole.SuperAdmin)
-        )
-            return false;
-        if (
-            item.adminRequired &&
-            (!isAuth || props.auth.user?.role !== UserRole.Admin)
-        )
-            return false;
-        if (item.authRequired && !isAuth) return false;
+        ) {
+return false;
+}
+
+        if (item.adminRequired && (!isAuth || !isAdminRole)) {
+return false;
+}
+
+        if (item.authRequired && !isAuth) {
+return false;
+}
+
         return true;
     });
 

@@ -19,6 +19,9 @@ trait ProfileValidationRules
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
             'phone' => ['nullable', 'string', 'max:32'],
+            'band_name' => ['required', 'string', 'max:255'],
+            'contact_name' => ['required', 'string', 'max:255'],
+            'whatsapp_number' => ['required', 'string', 'max:32'],
         ];
     }
 

@@ -8,6 +8,7 @@ use App\Models\PlatformWithdrawal;
 use App\Services\PlatformWalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class PlatformWithdrawalController extends Controller
@@ -28,7 +29,8 @@ class PlatformWithdrawalController extends Controller
             'withdrawal_id' => $withdrawal->id,
             'user_id' => $request->user()->id,
             'amount' => $withdrawal->amount,
-            'destination' => $withdrawal->destination_account_number,
+            'destination_bank_code' => $withdrawal->destination_bank_code,
+            'destination_account_number' => Str::mask((string) $withdrawal->destination_account_number, '*', 4, -2),
         ]);
 
         $wallet->processWithdrawal($withdrawal);

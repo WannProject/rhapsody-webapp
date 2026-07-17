@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PlatformFeeRuleController;
 use App\Http\Controllers\Admin\PlatformWalletController;
 use App\Http\Controllers\Admin\PlatformWithdrawalController;
+use App\Http\Controllers\Admin\StudioDataController;
 use App\Http\Controllers\BookingPageController;
 use App\Http\Controllers\Bookings\BookingController;
 use App\Http\Controllers\HomeController;
@@ -48,6 +49,13 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(func
 
     // Super Admin-only — XenPlatform management
     Route::middleware(EnsureSuperAdmin::class)->prefix('admin')->name('admin.')->group(function () {
+        // Studio Data
+        Route::get('/studio-data', [StudioDataController::class, 'index'])->name('studio-data.index');
+        Route::patch('/studio-data/studio', [StudioDataController::class, 'updateStudio'])->name('studio-data.studio.update');
+        Route::post('/studio-data/equipment', [StudioDataController::class, 'storeEquipment'])->name('studio-data.equipment.store');
+        Route::patch('/studio-data/equipment/{equipment}', [StudioDataController::class, 'updateEquipment'])->name('studio-data.equipment.update');
+        Route::delete('/studio-data/equipment/{equipment}', [StudioDataController::class, 'destroyEquipment'])->name('studio-data.equipment.destroy');
+
         // Clients
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
         Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');

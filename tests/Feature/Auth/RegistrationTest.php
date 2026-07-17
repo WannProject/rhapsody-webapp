@@ -48,6 +48,9 @@ class RegistrationTest extends TestCase
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'band_name' => 'The Testers',
+            'contact_name' => 'Budi Pemesan',
+            'whatsapp_number' => '628123456789',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
@@ -56,5 +59,38 @@ class RegistrationTest extends TestCase
 
         $user = User::where('email', 'test@example.com')->first();
         $response->assertRedirect(route('home'));
+    }
+
+    public function test_registration_requires_customer_profile_fields()
+    {
+        $response = $this->post(route('register.store'), [
+            'name' => 'No Profile User',
+            'email' => 'noprofile@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors(['band_name', 'contact_name', 'whatsapp_number']);
+        $this->assertGuest();
+    }
+
+    public function test_registration_persists_customer_profile_fields()
+    {
+        $this->post(route('register.store'), [
+            'name' => 'Test User',
+            'email' => 'band@example.com',
+            'band_name' => 'Rhapsody Rockers',
+            'contact_name' => 'Siti Pemesan',
+            'whatsapp_number' => '628129987654',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $user = User::where('email', 'band@example.com')->first();
+
+        $this->assertNotNull($user);
+        $this->assertSame('Rhapsody Rockers', $user->band_name);
+        $this->assertSame('Siti Pemesan', $user->contact_name);
+        $this->assertSame('628129987654', $user->whatsapp_number);
     }
 }

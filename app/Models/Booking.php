@@ -4,9 +4,13 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
+use App\Support\WhatsAppNumber;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
@@ -24,17 +28,22 @@ use Illuminate\Support\Str;
  * @property Carbon $booking_date
  * @property string $starts_at
  * @property string $ends_at
+ * @property int $base_price
+ * @property int $additional_price
  * @property int $total_price
  * @property BookingStatus $status
  * @property PaymentStatus $payment_status
  * @property string|null $notes
+ * @property string|null $customer_equipment_notes
  * @property string|null $admin_notes
  * @property Carbon|null $confirmed_at
  * @property Carbon|null $cancelled_at
+ * @property Carbon|null $held_until
  * @property-read User $user
  * @property-read Client|null $client
  * @property-read PaymentMethod|null $paymentMethod
  * @property-read Payment|null $payment
+ * @property-read Collection<int, Equipment> $equipments
  */
 #[Fillable([
     'user_id',
@@ -46,13 +55,17 @@ use Illuminate\Support\Str;
     'booking_date',
     'starts_at',
     'ends_at',
+    'base_price',
+    'additional_price',
     'total_price',
     'status',
     'payment_status',
     'notes',
+    'customer_equipment_notes',
     'admin_notes',
     'confirmed_at',
     'cancelled_at',
+    'held_until',
 ])]
 class Booking extends Model
 {
@@ -103,12 +116,34 @@ class Booking extends Model
     }
 
     /**
+     * @return BelongsToMany<Equipment, $this>
+     */
+    public function equipments(): BelongsToMany
+    {
+        return $this->belongsToMany(Equipment::class, 'booking_equipment')
+            ->using(BookingEquipment::class)
+            ->withPivot(['quantity', 'unit_price'])
+            ->withTimestamps();
+    }
+
+    /**
      * @param  Builder<self>  $query
      * @return Builder<self>
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', '!=', BookingStatus::Cancelled->value);
+        return $query
+            ->whereNotIn('status', [
+                BookingStatus::Cancelled->value,
+                BookingStatus::Expired->value,
+                BookingStatus::Refunded->value,
+            ])
+            ->where(function (Builder $query) {
+                $query
+                    ->where('status', '!=', BookingStatus::Pending->value)
+                    ->orWhereNull('held_until')
+                    ->orWhere('held_until', '>=', now());
+            });
     }
 
     public function isOwnedBy(User $user): bool
@@ -130,6 +165,16 @@ class Booking extends Model
     }
 
     /**
+     * Normalize the customer WhatsApp number whenever it is set.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function customerPhone(): Attribute
+    {
+        return Attribute::set(fn (?string $value) => WhatsAppNumber::normalize($value));
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -140,9 +185,12 @@ class Booking extends Model
             'booking_date' => 'date',
             'status' => BookingStatus::class,
             'payment_status' => PaymentStatus::class,
+            'base_price' => 'integer',
+            'additional_price' => 'integer',
             'total_price' => 'integer',
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'held_until' => 'datetime',
         ];
     }
 }

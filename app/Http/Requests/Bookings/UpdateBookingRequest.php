@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Bookings;
 
 use App\Models\Booking;
+use App\Models\Equipment;
 use App\Models\PaymentMethod;
 use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
@@ -35,6 +36,9 @@ class UpdateBookingRequest extends FormRequest
             ],
             'customer_phone' => ['nullable', 'string', 'max:32'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'customer_equipment_notes' => ['nullable', 'string', 'max:1000'],
+            'equipment' => ['nullable', 'array'],
+            'equipment.*' => ['integer', 'min:1', 'max:64'],
         ];
     }
 
@@ -49,6 +53,8 @@ class UpdateBookingRequest extends FormRequest
                     return;
                 }
 
+                $this->validateEquipmentSelection($validator);
+
                 /** @var Booking $booking */
                 $booking = $this->route('booking');
                 $studio = StudioSetting::active();
@@ -60,6 +66,56 @@ class UpdateBookingRequest extends FormRequest
                     $validator->errors()->add('starts_at', __('Slot waktu ini sudah dibooking.'));
                 }
             },
+        ];
+    }
+
+    private function validateEquipmentSelection(Validator $validator): void
+    {
+        $equipment = $this->input('equipment');
+        if (! is_array($equipment) || $equipment === []) {
+            return;
+        }
+
+        $ids = array_keys($equipment);
+        $active = Equipment::query()
+            ->where('is_active', true)
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($equipment as $id => $quantity) {
+            $id = (int) $id;
+            $quantity = (int) $quantity;
+
+            if ($quantity <= 0) {
+                continue;
+            }
+
+            $item = $active->get($id);
+            if (! $item) {
+                $validator->errors()->add("equipment.{$id}", __('Alat tidak tersedia.'));
+                continue;
+            }
+
+            if ($quantity > $item->stock) {
+                $validator->errors()->add(
+                    "equipment.{$id}",
+                    __('Jumlah :name melebihi stok (:stock).', [
+                        'name' => $item->name,
+                        'stock' => $item->stock,
+                    ]),
+                );
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'equipment.*.min' => __('Jumlah alat minimal 1.'),
         ];
     }
 }

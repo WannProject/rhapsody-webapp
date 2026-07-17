@@ -61,6 +61,42 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
 
                             <div className="grid gap-2">
                                 <Label
+                                    htmlFor="band_name"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Nama Band
+                                </Label>
+                                <Input
+                                    id="band_name"
+                                    type="text"
+                                    required
+                                    tabIndex={2}
+                                    name="band_name"
+                                    placeholder="Nama band Anda"
+                                />
+                                <InputError message={errors.band_name} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label
+                                    htmlFor="contact_name"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Nama Pemesan
+                                </Label>
+                                <Input
+                                    id="contact_name"
+                                    type="text"
+                                    required
+                                    tabIndex={3}
+                                    name="contact_name"
+                                    placeholder="Nama pemesan (penanggung jawab)"
+                                />
+                                <InputError message={errors.contact_name} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label
                                     htmlFor="email"
                                     className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
                                 >
@@ -70,7 +106,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                     id="email"
                                     type="email"
                                     required
-                                    tabIndex={2}
+                                    tabIndex={4}
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
@@ -80,20 +116,21 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
 
                             <div className="grid gap-2">
                                 <Label
-                                    htmlFor="phone"
+                                    htmlFor="whatsapp_number"
                                     className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
                                 >
                                     WhatsApp number
                                 </Label>
                                 <Input
-                                    id="phone"
+                                    id="whatsapp_number"
                                     type="tel"
-                                    tabIndex={3}
+                                    required
+                                    tabIndex={5}
                                     autoComplete="tel"
-                                    name="phone"
+                                    name="whatsapp_number"
                                     placeholder="62812xxxxxxx"
                                 />
-                                <InputError message={errors.phone} />
+                                <InputError message={errors.whatsapp_number} />
                             </div>
 
                             <div className="grid gap-2">
@@ -106,7 +143,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                 <PasswordInput
                                     id="password"
                                     required
-                                    tabIndex={4}
+                                    tabIndex={6}
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder="Password"
@@ -125,7 +162,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
-                                    tabIndex={5}
+                                    tabIndex={7}
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Confirm password"
@@ -139,7 +176,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={6}
+                                tabIndex={8}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -161,7 +198,7 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                         : login()
                                 }
                                 data-test="team-invitation-login-link"
-                                tabIndex={7}
+                                tabIndex={9}
                             >
                                 Log in
                             </TextLink>

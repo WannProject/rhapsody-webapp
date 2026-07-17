@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PaymentGatewayStatus;
 use App\Enums\SplitStatus;
 use App\Models\Payment;
 use App\Services\PaymentService;
@@ -47,14 +46,13 @@ class WebhookController extends Controller
         $event = $payload['event'] ?? '';
 
         match (true) {
-            in_array($status, ['PAID', 'SETTLED', 'SETTLING'], true) || $event === 'invoice.paid'
-                => $this->paymentService->markAsPaid($payment, $payload),
+            in_array($status, ['PAID', 'SETTLED', 'SETTLING'], true) || $event === 'invoice.paid' => $this->paymentService->markAsPaid($payment, $payload),
 
-            $status === 'EXPIRED' || $event === 'invoice.expired'
-                => $this->paymentService->markAsExpired($payment, $payload),
+            $status === 'EXPIRED' || $event === 'invoice.expired' => $this->paymentService->markAsExpired($payment, $payload),
 
-            $status === 'FAILED' || $event === 'invoice.failed'
-                => $this->paymentService->markAsFailed($payment, $payload['failure_reason'] ?? null, $payload),
+            $status === 'FAILED' || $event === 'invoice.failed' => $this->paymentService->markAsFailed($payment, $payload['failure_reason'] ?? null, $payload),
+
+            $status === 'REFUNDED' || $event === 'invoice.refunded' => $this->paymentService->markAsRefunded($payment, $payload),
 
             default => null,
         };
