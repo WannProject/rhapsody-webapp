@@ -155,12 +155,16 @@ export function HomeScreen({ serverProps }: HomeScreenProps) {
     const hourlyRate = studio?.hourlyRate ?? 150000;
     const studioName = studio?.name ?? 'Rhapsody Studio';
 
-    if (user?.role === 'super_admin') {
+    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+    const isSuperAdmin = user?.role === 'super_admin';
+
+    if (isAdmin) {
         return (
             <SuperAdminDashboard
                 studio={studio}
                 scheduleSlots={scheduleSlots}
                 adminStats={serverProps?.adminStats}
+                isSuperAdmin={isSuperAdmin}
             />
         );
     }
@@ -488,10 +492,12 @@ function SuperAdminDashboard({
     studio,
     scheduleSlots,
     adminStats,
+    isSuperAdmin,
 }: {
     studio: NonNullable<HomeScreenProps['serverProps']>['studio'];
     scheduleSlots: NonNullable<HomeScreenProps['serverProps']>['scheduleSlots'];
     adminStats?: AdminStats;
+    isSuperAdmin: boolean;
 }) {
     const stats = adminStats ?? {
         totalBookings: 0,
@@ -523,25 +529,48 @@ function SuperAdminDashboard({
             helper: `${stats.confirmedBookings} terkonfirmasi`,
             icon: ReceiptText,
         },
-        {
+        isSuperAdmin && {
             label: 'Client',
             value: stats.totalClients,
             helper: `${stats.verifiedClients} verified`,
             icon: Users,
         },
-        {
+        isSuperAdmin && {
             label: 'Saldo Platform',
             value: formatRupiah(stats.availableBalance),
             helper: `${formatRupiah(stats.pendingWithdrawalsAmount)} pending`,
             icon: Wallet,
         },
-        {
+        isSuperAdmin && {
             label: 'Fee Masuk',
             value: formatRupiah(stats.totalPlatformFee),
             helper: `${stats.activeFeeRules} rule aktif`,
             icon: Percent,
         },
-    ];
+        !isSuperAdmin && {
+            label: 'Lunas',
+            value: stats.paidBookings,
+            helper: 'Pembayaran sukses',
+            icon: CreditCard,
+        },
+        !isSuperAdmin && {
+            label: 'Alat Aktif',
+            value: stats.activeEquipments,
+            helper: `${stats.activePaymentMethods} metode bayar`,
+            icon: PackageCheck,
+        },
+        !isSuperAdmin && {
+            label: 'Notifikasi Gagal',
+            value: stats.failedNotifications,
+            helper: 'Perlu tindak lanjut',
+            icon: Bell,
+        },
+    ].filter(Boolean) as {
+        label: string;
+        value: string | number;
+        helper: string;
+        icon: LucideIcon;
+    }[];
 
     const setupCards = [
         {
@@ -576,50 +605,77 @@ function SuperAdminDashboard({
             copy: 'Review booking, status pembayaran, metode bayar, dan catatan admin.',
             href: '/orders',
             icon: ReceiptText,
+            superAdminOnly: false,
         },
         {
             title: 'Data Studio & Harga',
             copy: 'Ubah profil studio, jam operasional, harga per jam, dan inventori alat.',
             href: '/admin/studio-data',
             icon: Settings2,
+            superAdminOnly: false,
         },
-        {
-            title: 'Client Merchant',
-            copy: 'Kelola client, status verifikasi, dan sub-account Xendit.',
-            href: '/admin/clients',
-            icon: Building2,
-        },
+        isSuperAdmin
+            ? {
+                  title: 'Client Merchant',
+                  copy: 'Kelola client, status verifikasi, dan sub-account Xendit.',
+                  href: '/admin/clients',
+                  icon: Building2,
+                  superAdminOnly: true,
+              }
+            : null,
         {
             title: 'Jadwal & Blokir Slot',
             copy: 'Lihat slot harian dan tutup jadwal saat libur atau maintenance.',
             href: '/bookings#slot-blocks',
             icon: CalendarDays,
+            superAdminOnly: false,
         },
         {
             title: 'Metode Pembayaran',
             copy: 'Tambah, urutkan, aktifkan, atau nonaktifkan cara bayar customer.',
             href: '/orders#payment-methods',
             icon: CreditCard,
+            superAdminOnly: false,
         },
-        {
-            title: 'Fee Platform',
-            copy: 'Atur rule potongan platform untuk transaksi dan split pembayaran.',
-            href: '/admin/platform-fees',
-            icon: Percent,
-        },
-        {
-            title: 'Wallet Platform',
-            copy: 'Pantau ledger, saldo, withdrawal, dan export riwayat dana.',
-            href: '/admin/platform-wallet',
-            icon: Wallet,
-        },
+        isSuperAdmin
+            ? {
+                  title: 'Fee Platform',
+                  copy: 'Atur rule potongan platform untuk transaksi dan split pembayaran.',
+                  href: '/admin/platform-fees',
+                  icon: Percent,
+                  superAdminOnly: true,
+              }
+            : null,
+        isSuperAdmin
+            ? {
+                  title: 'Wallet Platform',
+                  copy: 'Pantau ledger, saldo, withdrawal, dan export riwayat dana.',
+                  href: '/admin/platform-wallet',
+                  icon: Wallet,
+                  superAdminOnly: true,
+              }
+            : null,
         {
             title: 'Audit Notifikasi',
             copy: 'Cek status pengiriman WhatsApp/notifikasi dan error yang gagal.',
             href: '/admin/notification-logs',
             icon: Bell,
+            superAdminOnly: false,
         },
-    ];
+        {
+            title: 'Laporan & Revenue',
+            copy: 'Ringkasan booking, status pembayaran, dan revenue studio.',
+            href: '/reports',
+            icon: Gauge,
+            superAdminOnly: false,
+        },
+    ].filter(Boolean) as {
+        title: string;
+        copy: string;
+        href: string;
+        icon: LucideIcon;
+        superAdminOnly: boolean;
+    }[];
 
     return (
         <div className="mx-auto grid max-w-7xl gap-6">
@@ -627,14 +683,14 @@ function SuperAdminDashboard({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                         <p className="text-xs font-bold tracking-[0.22em] text-muted-foreground uppercase">
-                            Super Admin Dashboard
+                            {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
                         </p>
                         <h1 className="mt-2 font-display text-3xl leading-tight font-extrabold text-primary md:text-5xl">
                             Operasional {studioName}
                         </h1>
                         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">
-                            Pantau pesanan, harga, client, fee platform, wallet,
-                            dan audit sistem dari satu halaman kerja.
+                            Pantau pesanan, harga, dan operasional studio dari satu
+                            halaman kerja.
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
@@ -678,16 +734,18 @@ function SuperAdminDashboard({
                                 Modul Admin
                             </p>
                             <h2 className="mt-1 font-display text-2xl font-bold text-primary">
-                                Fitur sesuai database
+                                Akses cepat
                             </h2>
                         </div>
-                        <Badge variant="outline" className="rounded-md">
-                            {stats.pendingClients} client pending
-                        </Badge>
+                        {isSuperAdmin && (
+                            <Badge variant="outline" className="rounded-md">
+                                {stats.pendingClients} client pending
+                            </Badge>
+                        )}
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-2">
-                        {actionCards.map((action) => (
+                        {actionCards.map(({ superAdminOnly: _, ...action }) => (
                             <AdminActionCard key={action.href} {...action} />
                         ))}
                     </div>
@@ -701,7 +759,7 @@ function SuperAdminDashboard({
                                 Status Penting
                             </CardTitle>
                             <CardDescription>
-                                Area yang perlu dicek rutin oleh superadmin.
+                                Area yang perlu dicek rutin.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-3">
@@ -714,15 +772,17 @@ function SuperAdminDashboard({
                                         : 'default'
                                 }
                             />
-                            <StatusRow
-                                label="Withdrawal pending"
-                                value={stats.pendingWithdrawalsCount}
-                                tone={
-                                    stats.pendingWithdrawalsCount > 0
-                                        ? 'warning'
-                                        : 'default'
-                                }
-                            />
+                            {isSuperAdmin && (
+                                <StatusRow
+                                    label="Withdrawal pending"
+                                    value={stats.pendingWithdrawalsCount}
+                                    tone={
+                                        stats.pendingWithdrawalsCount > 0
+                                            ? 'warning'
+                                            : 'default'
+                                    }
+                                />
+                            )}
                             <StatusRow
                                 label="Notifikasi gagal"
                                 value={stats.failedNotifications}

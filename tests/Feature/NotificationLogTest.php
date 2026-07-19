@@ -134,7 +134,7 @@ class NotificationLogTest extends TestCase
             ->where('logs.0.status', 'sent'));
     }
 
-    public function test_admin_and_customer_cannot_view_notification_logs(): void
+    public function test_admin_can_view_but_customer_cannot_view_notification_logs(): void
     {
         NotificationLog::query()->create([
             'channel' => 'whatsapp',
@@ -144,7 +144,8 @@ class NotificationLogTest extends TestCase
         ]);
 
         $admin = User::factory()->admin()->create();
-        $this->actingAs($admin)->get('/admin/notification-logs')->assertForbidden();
+        $this->withoutVite();
+        $this->actingAs($admin)->get('/admin/notification-logs')->assertOk();
 
         $customer = User::factory()->create();
         $this->actingAs($customer)->get('/admin/notification-logs')->assertForbidden();

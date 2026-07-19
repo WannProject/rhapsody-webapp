@@ -35,12 +35,29 @@ class StudioDataManagementTest extends TestCase
                 ->where('equipments.0.name', 'Mikrofon vokal'));
     }
 
-    public function test_non_super_admin_cannot_access_studio_data_page(): void
+    public function test_admin_can_access_studio_data_page(): void
     {
+        $this->withoutVite();
+
         $admin = User::factory()->admin()->create();
+        $studio = StudioSetting::active();
+        Equipment::factory()->create(['name' => 'Mikrofon vokal']);
 
         $this
             ->actingAs($admin)
+            ->get(route('admin.studio-data.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/studio-data/index')
+                ->where('studio.name', $studio->name));
+    }
+
+    public function test_customer_cannot_access_studio_data_page(): void
+    {
+        $customer = User::factory()->create();
+
+        $this
+            ->actingAs($customer)
             ->get(route('admin.studio-data.index'))
             ->assertForbidden();
     }

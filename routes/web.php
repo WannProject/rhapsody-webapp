@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PlatformFeeRuleController;
 use App\Http\Controllers\Admin\PlatformWalletController;
 use App\Http\Controllers\Admin\PlatformWithdrawalController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SlotBlockController;
 use App\Http\Controllers\Admin\StudioDataController;
 use App\Http\Controllers\BookingPageController;
@@ -44,29 +45,32 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(func
     Route::middleware(EnsureAdmin::class)->group(function () {
         Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status');
 
-        Route::get('/reports', fn () => Inertia::render('reports/index'))->name('reports');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports');
 
         Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
         Route::patch('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
         Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+
+        // Admin operational management (Admin + Super Admin)
+        Route::prefix('admin')->name('admin.')->group(function () {
+            // Studio Data — pricing, equipment, operational hours
+            Route::get('/studio-data', [StudioDataController::class, 'index'])->name('studio-data.index');
+            Route::patch('/studio-data/studio', [StudioDataController::class, 'updateStudio'])->name('studio-data.studio.update');
+            Route::post('/studio-data/equipment', [StudioDataController::class, 'storeEquipment'])->name('studio-data.equipment.store');
+            Route::patch('/studio-data/equipment/{equipment}', [StudioDataController::class, 'updateEquipment'])->name('studio-data.equipment.update');
+            Route::delete('/studio-data/equipment/{equipment}', [StudioDataController::class, 'destroyEquipment'])->name('studio-data.equipment.destroy');
+
+            // Slot Blocks (manual slot blocking by admin)
+            Route::post('/slot-blocks', [SlotBlockController::class, 'store'])->name('slot-blocks.store');
+            Route::delete('/slot-blocks/{slotBlock}', [SlotBlockController::class, 'destroy'])->name('slot-blocks.destroy');
+
+            // Notification Logs
+            Route::get('/notification-logs', [NotificationLogController::class, 'index'])->name('notification-logs.index');
+        });
     });
 
-    // Super Admin-only — XenPlatform management
+    // Super Admin-only — XenPlatform financial management
     Route::middleware(EnsureSuperAdmin::class)->prefix('admin')->name('admin.')->group(function () {
-        // Studio Data
-        Route::get('/studio-data', [StudioDataController::class, 'index'])->name('studio-data.index');
-        Route::patch('/studio-data/studio', [StudioDataController::class, 'updateStudio'])->name('studio-data.studio.update');
-        Route::post('/studio-data/equipment', [StudioDataController::class, 'storeEquipment'])->name('studio-data.equipment.store');
-        Route::patch('/studio-data/equipment/{equipment}', [StudioDataController::class, 'updateEquipment'])->name('studio-data.equipment.update');
-        Route::delete('/studio-data/equipment/{equipment}', [StudioDataController::class, 'destroyEquipment'])->name('studio-data.equipment.destroy');
-
-        // Slot Blocks (manual slot blocking by super admin)
-        Route::post('/slot-blocks', [SlotBlockController::class, 'store'])->name('slot-blocks.store');
-        Route::delete('/slot-blocks/{slotBlock}', [SlotBlockController::class, 'destroy'])->name('slot-blocks.destroy');
-
-        // Notification Logs
-        Route::get('/notification-logs', [NotificationLogController::class, 'index'])->name('notification-logs.index');
-
         // Clients
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
         Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
