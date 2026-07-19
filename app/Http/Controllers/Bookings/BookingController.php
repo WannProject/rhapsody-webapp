@@ -14,16 +14,35 @@ use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class BookingController extends Controller
 {
     public function __construct(
         private readonly PaymentService $paymentService,
     ) {}
+
+    /**
+     * Show detailed view of a single booking.
+     * Customers can only view their own bookings; admins can view any.
+     */
+    public function show(Request $request, Booking $booking): Response
+    {
+        $user = $request->user();
+        abort_unless($user->isAdmin() || $booking->isOwnedBy($user), 403);
+
+        $booking->load(['paymentMethod', 'user', 'payment', 'equipments']);
+
+        return Inertia::render('bookings/show', [
+            'booking' => $this->detailPayload($booking),
+            'isAdmin' => $user->isAdmin(),
+        ]);
+    }
 
     public function store(StoreBookingRequest $request, BookingSchedule $schedule): RedirectResponse
     {
@@ -247,5 +266,61 @@ class BookingController extends Controller
         }
 
         $booking->equipments()->sync($pivot);
+    }
+
+    /**
+     * Build the customer/admin detail payload for a single booking.
+     *
+     * @return array<string, mixed>
+     */
+    private function detailPayload(Booking $booking): array
+    {
+        $user = $booking->user;
+
+        return [
+            'code' => $booking->code,
+            'customerName' => $booking->customer_name,
+            'customerEmail' => $booking->customer_email,
+            'customerPhone' => $booking->customer_phone,
+            'bandName' => $user?->band_name,
+            'contactName' => $user?->contact_name,
+            'whatsappNumber' => $user?->whatsapp_number,
+            'bookingDate' => $booking->booking_date->toDateString(),
+            'startsAt' => substr($booking->starts_at, 0, 5),
+            'endsAt' => substr($booking->ends_at, 0, 5),
+            'durationMinutes' => $this->durationMinutes($booking),
+            'basePrice' => $booking->base_price,
+            'additionalPrice' => $booking->additional_price,
+            'totalPrice' => $booking->total_price,
+            'status' => $booking->status->value,
+            'statusLabel' => $booking->status->label(),
+            'isActive' => $booking->status->isActive(),
+            'isTerminal' => $booking->status->isTerminal(),
+            'paymentStatus' => $booking->payment_status->value,
+            'paymentStatusLabel' => $booking->payment_status->label(),
+            'paymentMethodId' => $booking->payment_method_id,
+            'paymentMethodName' => $booking->paymentMethod?->name,
+            'notes' => $booking->notes,
+            'customerEquipmentNotes' => $booking->customer_equipment_notes,
+            'adminNotes' => $booking->admin_notes,
+            'paymentLinkUrl' => $booking->payment?->payment_link_url,
+            'createdAt' => $booking->created_at?->toDateTimeString(),
+            'equipments' => $booking->equipments->map(fn (Equipment $equipment) => [
+                'id' => $equipment->id,
+                'name' => $equipment->name,
+                'category' => $equipment->category,
+                'quantity' => (int) $equipment->pivot->quantity,
+                'unitPrice' => (int) $equipment->pivot->unit_price,
+                'subtotal' => (int) $equipment->pivot->quantity * (int) $equipment->pivot->unit_price,
+            ]),
+        ];
+    }
+
+    private function durationMinutes(Booking $booking): int
+    {
+        $start = \Illuminate\Support\Carbon::parse($booking->booking_date->toDateString().' '.$booking->starts_at);
+        $end = \Illuminate\Support\Carbon::parse($booking->booking_date->toDateString().' '.$booking->ends_at);
+
+        return (int) $start->diffInMinutes($end);
     }
 }

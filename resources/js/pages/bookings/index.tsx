@@ -19,7 +19,21 @@ type Slot = {
     endsAt: string;
     available: boolean;
     price: string;
-    label: string;
+    status: 'available' | 'held' | 'booked' | 'blocked';
+    statusLabel: string;
+    booking: {
+        code: string;
+        status: string;
+        customerName: string;
+    } | null;
+    block: { id: number; reason: string | null } | null;
+};
+type SlotBlockItem = {
+    id: number;
+    bookingDate: string;
+    startsAt: string;
+    endsAt: string;
+    reason: string | null;
 };
 type BookingEquipment = {
     id: number;
@@ -88,6 +102,7 @@ type Props = {
         hourlyRate: number;
     };
     scheduleSlots: Slot[];
+    slotBlocks: SlotBlockItem[];
     equipments: EquipmentOption[];
     paymentMethods: PaymentMethodItem[];
     allPaymentMethods: PaymentMethodItem[];
@@ -126,6 +141,7 @@ export default function BookingsPage() {
         stats,
         bookings,
         scheduleSlots,
+        slotBlocks,
         paymentMethods,
         allPaymentMethods,
         selectedDate,
@@ -174,6 +190,27 @@ export default function BookingsPage() {
                             </div>
                         ))}
                     </section>
+
+                    {/* Slot Grid */}
+                    <section className="grid gap-5">
+                        <div>
+                            <h2 className="font-display text-2xl font-bold text-primary">
+                                Jadwal {selectedDate}
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Status tiap slot untuk tanggal terpilih.
+                            </p>
+                        </div>
+                        <SlotGrid slots={scheduleSlots} />
+                    </section>
+
+                    {/* Slot Block Manager (Superadmin) */}
+                    {isAdmin && (
+                        <SlotBlockManager
+                            selectedDate={selectedDate}
+                            slotBlocks={slotBlocks}
+                        />
+                    )}
 
                     {/* Booking Form (Customer) */}
                     {!isAdmin && (
@@ -388,6 +425,139 @@ export default function BookingsPage() {
                 </div>
             </RhapsodyLayout>
         </>
+    );
+}
+
+function SlotGrid({ slots }: { slots: Slot[] }) {
+    const tone: Record<Slot['status'], string> = {
+        available: 'border-primary/40 bg-primary/5 text-primary',
+        held: 'border-amber-500/40 bg-amber-500/10 text-amber-700',
+        booked: 'border-rose-500/40 bg-rose-500/10 text-rose-700',
+        blocked: 'border-zinc-500/40 bg-zinc-500/10 text-zinc-700',
+    };
+
+    return (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {slots.map((s) => (
+                <div
+                    key={s.time}
+                    className={`rounded-lg border p-4 ${tone[s.status]}`}
+                >
+                    <div className="flex items-center justify-between">
+                        <p className="font-display text-lg font-bold">
+                            {s.time} - {s.endsAt}
+                        </p>
+                        <span className="rounded-full border border-current px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+                            {s.statusLabel}
+                        </span>
+                    </div>
+                    <p className="mt-1 text-xs opacity-80">{s.price}</p>
+                    {s.booking && (
+                        <p className="mt-1 text-xs opacity-80">
+                            {s.booking.customerName} ({s.booking.code})
+                        </p>
+                    )}
+                    {s.block?.reason && (
+                        <p className="mt-1 text-xs opacity-80">
+                            Alasan: {s.block.reason}
+                        </p>
+                    )}
+                </div>
+            ))}
+            {slots.length === 0 && (
+                <p className="col-span-full text-center text-sm text-muted-foreground">
+                    Tidak ada slot untuk tanggal ini.
+                </p>
+            )}
+        </div>
+    );
+}
+
+function SlotBlockManager({
+    selectedDate,
+    slotBlocks,
+}: {
+    selectedDate: string;
+    slotBlocks: SlotBlockItem[];
+}) {
+    return (
+        <section className="grid gap-5">
+            <div>
+                <h2 className="font-display text-2xl font-bold text-primary">
+                    Blokir Slot
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Cegah customer membooking slot tertentu (libur, maintenance,
+                    dll).
+                </p>
+            </div>
+
+            <Form
+                action="/admin/slot-blocks"
+                method="post"
+                className="grid gap-3 rounded-lg border border-border bg-card p-5 md:grid-cols-4"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <Input
+                            name="booking_date"
+                            type="date"
+                            defaultValue={selectedDate}
+                            required
+                        />
+                        <Input
+                            name="starts_at"
+                            type="time"
+                            required
+                            defaultValue="09:00"
+                        />
+                        <Input
+                            name="reason"
+                            placeholder="Alasan blokir (opsional)"
+                        />
+                        <Button disabled={processing}>Blokir Slot</Button>
+                        <InputError message={errors.booking_date} />
+                        <InputError message={errors.starts_at} />
+                        <InputError message={errors.reason} />
+                    </>
+                )}
+            </Form>
+
+            {slotBlocks.length > 0 && (
+                <div className="grid gap-3">
+                    {slotBlocks.map((b) => (
+                        <div
+                            key={b.id}
+                            className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 md:flex-row md:items-center md:justify-between"
+                        >
+                            <div>
+                                <p className="font-display font-bold text-primary">
+                                    {b.bookingDate}, {b.startsAt} - {b.endsAt}
+                                </p>
+                                {b.reason && (
+                                    <p className="text-xs text-muted-foreground">
+                                        {b.reason}
+                                    </p>
+                                )}
+                            </div>
+                            <Form
+                                action={`/admin/slot-blocks/${b.id}`}
+                                method="delete"
+                            >
+                                {({ processing }) => (
+                                    <Button
+                                        variant="outline"
+                                        disabled={processing}
+                                    >
+                                        Buka Blokir
+                                    </Button>
+                                )}
+                            </Form>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </section>
     );
 }
 

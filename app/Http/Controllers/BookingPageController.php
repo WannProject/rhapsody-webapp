@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\Equipment;
 use App\Models\PaymentMethod;
+use App\Models\SlotBlock;
 use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
 use Illuminate\Http\Request;
@@ -26,10 +28,21 @@ class BookingPageController extends Controller
             ->orderBy('name')
             ->get();
 
+        $slotBlocks = SlotBlock::query()
+            ->whereDate('booking_date', $selectedDate)
+            ->orderBy('starts_at')
+            ->get();
+
         $bookingsQuery = Booking::query()
             ->with(['paymentMethod', 'user', 'payment', 'equipments'])
             ->latest('booking_date')
             ->latest('starts_at');
+
+        $scopedQuery = $isAdmin ? $bookingsQuery : $bookingsQuery->where('user_id', $user->id);
+        $allBookings = $scopedQuery->limit(50)->get();
+
+        $activeBookings = $allBookings->filter(fn (Booking $b) => $b->status->isActive())->values();
+        $historyBookings = $allBookings->filter(fn (Booking $b) => ! $b->status->isActive())->values();
 
         return Inertia::render('bookings/index', [
             'isAdmin' => $isAdmin,
@@ -43,6 +56,13 @@ class BookingPageController extends Controller
                 'hourlyRate' => $studio->hourly_rate,
             ],
             'scheduleSlots' => $schedule->slotsForDate($selectedDate, $studio),
+            'slotBlocks' => $slotBlocks->map(fn (SlotBlock $block) => [
+                'id' => $block->id,
+                'bookingDate' => $block->booking_date->toDateString(),
+                'startsAt' => substr($block->starts_at, 0, 5),
+                'endsAt' => substr($block->ends_at, 0, 5),
+                'reason' => $block->reason,
+            ]),
             'equipments' => $equipments->map(fn (Equipment $equipment) => [
                 'id' => $equipment->id,
                 'name' => $equipment->name,
@@ -78,38 +98,15 @@ class BookingPageController extends Controller
                     'isActive' => $method->is_active,
                     'sortOrder' => $method->sort_order,
                 ]),
-            'bookings' => ($isAdmin ? $bookingsQuery : $bookingsQuery->where('user_id', $user->id))
-                ->limit(50)
-                ->get()
-                ->map(fn (Booking $booking) => [
-                    'code' => $booking->code,
-                    'customerName' => $booking->customer_name,
-                    'customerEmail' => $booking->customer_email,
-                    'customerPhone' => $booking->customer_phone,
-                    'bookingDate' => $booking->booking_date->toDateString(),
-                    'startsAt' => substr($booking->starts_at, 0, 5),
-                    'endsAt' => substr($booking->ends_at, 0, 5),
-                    'basePrice' => $booking->base_price,
-                    'additionalPrice' => $booking->additional_price,
-                    'totalPrice' => $booking->total_price,
-                    'status' => $booking->status->value,
-                    'statusLabel' => $booking->status->label(),
-                    'paymentStatus' => $booking->payment_status->value,
-                    'paymentStatusLabel' => $booking->payment_status->label(),
-                    'paymentMethodId' => $booking->payment_method_id,
-                    'paymentMethodName' => $booking->paymentMethod?->name,
-                    'notes' => $booking->notes,
-                    'customerEquipmentNotes' => $booking->customer_equipment_notes,
-                    'adminNotes' => $booking->admin_notes,
-                    'paymentLinkUrl' => $booking->payment?->payment_link_url,
-                    'equipments' => $booking->equipments->map(fn (Equipment $equipment) => [
-                        'id' => $equipment->id,
-                        'name' => $equipment->name,
-                        'category' => $equipment->category,
-                        'quantity' => (int) $equipment->pivot->quantity,
-                        'unitPrice' => (int) $equipment->pivot->unit_price,
-                    ]),
-                ]),
+            'bookings' => $allBookings
+                ->map(fn (Booking $booking) => $this->listPayload($booking))
+                ->values()->all(),
+            'activeBookings' => $activeBookings
+                ->map(fn (Booking $booking) => $this->listPayload($booking))
+                ->values()->all(),
+            'historyBookings' => $historyBookings
+                ->map(fn (Booking $booking) => $this->listPayload($booking))
+                ->values()->all(),
             'stats' => $isAdmin
                 ? [
                     'totalBookings' => Booking::query()->count(),
@@ -124,5 +121,42 @@ class BookingPageController extends Controller
                     'paidBookings' => Booking::query()->where('user_id', $user->id)->where('payment_status', 'paid')->count(),
                 ],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function listPayload(Booking $booking): array
+    {
+        return [
+            'code' => $booking->code,
+            'customerName' => $booking->customer_name,
+            'customerEmail' => $booking->customer_email,
+            'customerPhone' => $booking->customer_phone,
+            'bookingDate' => $booking->booking_date->toDateString(),
+            'startsAt' => substr($booking->starts_at, 0, 5),
+            'endsAt' => substr($booking->ends_at, 0, 5),
+            'basePrice' => $booking->base_price,
+            'additionalPrice' => $booking->additional_price,
+            'totalPrice' => $booking->total_price,
+            'status' => $booking->status->value,
+            'statusLabel' => $booking->status->label(),
+            'isActive' => $booking->status->isActive(),
+            'paymentStatus' => $booking->payment_status->value,
+            'paymentStatusLabel' => $booking->payment_status->label(),
+            'paymentMethodId' => $booking->payment_method_id,
+            'paymentMethodName' => $booking->paymentMethod?->name,
+            'notes' => $booking->notes,
+            'customerEquipmentNotes' => $booking->customer_equipment_notes,
+            'adminNotes' => $booking->admin_notes,
+            'paymentLinkUrl' => $booking->payment?->payment_link_url,
+            'equipments' => $booking->equipments->map(fn (Equipment $equipment) => [
+                'id' => $equipment->id,
+                'name' => $equipment->name,
+                'category' => $equipment->category,
+                'quantity' => (int) $equipment->pivot->quantity,
+                'unitPrice' => (int) $equipment->pivot->unit_price,
+            ]),
+        ];
     }
 }

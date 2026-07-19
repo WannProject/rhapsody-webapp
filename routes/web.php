@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PlatformFeeRuleController;
 use App\Http\Controllers\Admin\PlatformWalletController;
 use App\Http\Controllers\Admin\PlatformWithdrawalController;
+use App\Http\Controllers\Admin\SlotBlockController;
 use App\Http\Controllers\Admin\StudioDataController;
 use App\Http\Controllers\BookingPageController;
 use App\Http\Controllers\Bookings\BookingController;
@@ -32,6 +34,7 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(func
     Route::get('/bookings', [BookingPageController::class, 'index'])->name('bookings');
 
     // Booking CRUD — customer + admin (ownership/role check in controller)
+    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::patch('/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update');
     Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
@@ -55,6 +58,13 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(func
         Route::post('/studio-data/equipment', [StudioDataController::class, 'storeEquipment'])->name('studio-data.equipment.store');
         Route::patch('/studio-data/equipment/{equipment}', [StudioDataController::class, 'updateEquipment'])->name('studio-data.equipment.update');
         Route::delete('/studio-data/equipment/{equipment}', [StudioDataController::class, 'destroyEquipment'])->name('studio-data.equipment.destroy');
+
+        // Slot Blocks (manual slot blocking by super admin)
+        Route::post('/slot-blocks', [SlotBlockController::class, 'store'])->name('slot-blocks.store');
+        Route::delete('/slot-blocks/{slotBlock}', [SlotBlockController::class, 'destroy'])->name('slot-blocks.destroy');
+
+        // Notification Logs
+        Route::get('/notification-logs', [NotificationLogController::class, 'index'])->name('notification-logs.index');
 
         // Clients
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');

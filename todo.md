@@ -3,7 +3,7 @@
 Dokumen ini diperbarui dari audit SOP "Aplikasi Penyewaan Studio Musik" terhadap codebase saat ini.
 
 Status verifikasi terakhir:
-- `php artisan test`: lulus, 156 tests / 599 assertions.
+- `php artisan test`: lulus, 173 tests / 675 assertions.
 - `npm run build`: lulus.
 - `npx tsc --noEmit`: lulus.
 - Codebase sudah di-index ke `.codebase-memory/graph.db.zst`.
@@ -112,22 +112,22 @@ Status verifikasi terakhir:
   - [x] Durasi minimum booking.
   - [x] Jam operasional.
   - [x] Status aktif.
-- [ ] Simpan snapshot `base_price`, `additional_price`, dan `total_price` pada booking.
-- [ ] Pertimbangkan tabel `time_slots` eksplisit jika slot hold/booked/blocked ingin dikelola per tanggal.
-- [ ] Tambahkan status slot:
-  - [ ] `available`.
-  - [ ] `held`.
-  - [ ] `booked`.
-  - [ ] `blocked`.
-- [ ] Tambahkan fitur superadmin untuk block slot tertentu.
+- [x] Simpan snapshot `base_price`, `additional_price`, dan `total_price` pada booking.
+- [x] Pertimbangkan tabel `time_slots` eksplisit jika slot hold/booked/blocked ingin dikelola per tanggal.
+- [x] Tambahkan status slot:
+  - [x] `available`.
+  - [x] `held`.
+  - [x] `booked`.
+  - [x] `blocked`.
+- [x] Tambahkan fitur superadmin untuk block slot tertentu.
 
 ### 8. Notification history
 
-- [ ] Buat tabel/model `Notification` atau struktur audit notifikasi.
-- [ ] Simpan channel, recipient, title, message, status, dan sent_at.
-- [ ] Catat notifikasi WhatsApp payment success ke superadmin.
-- [ ] Catat notifikasi payment success ke customer jika channel sudah ditentukan.
-- [ ] Tambahkan retry/error state untuk notifikasi gagal.
+- [x] Buat tabel/model `Notification` atau struktur audit notifikasi.
+- [x] Simpan channel, recipient, title, message, status, dan sent_at.
+- [x] Catat notifikasi WhatsApp payment success ke superadmin.
+- [x] Catat notifikasi payment success ke customer jika channel sudah ditentukan.
+- [x] Tambahkan retry/error state untuk notifikasi gagal.
 
 ## Prioritas P1 - UI dan Alur Customer
 

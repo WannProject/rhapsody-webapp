@@ -2,9 +2,11 @@
 
 namespace App\Support;
 
+use App\Enums\NotificationStatus;
 use App\Enums\UserRole;
 use App\Jobs\SendFonnteMessage;
 use App\Models\Booking;
+use App\Models\NotificationLog;
 use App\Models\StudioSetting;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -13,7 +15,12 @@ class BookingWhatsApp
 {
     public static function paymentPaid(Booking $booking): void
     {
-        self::send(self::adminTarget(), self::paymentPaidMessage($booking));
+        self::send(
+            target: self::adminTarget(),
+            message: self::paymentPaidMessage($booking),
+            title: 'Booking Studio Baru',
+            reference: $booking,
+        );
     }
 
     private static function adminTarget(): ?string
@@ -75,12 +82,26 @@ class BookingWhatsApp
         return substr($value, 0, 5);
     }
 
-    private static function send(?string $target, string $message): void
+    /**
+     * Create a pending NotificationLog then dispatch the sender job with the log id.
+     */
+    private static function send(?string $target, string $message, ?string $title = null, ?Booking $reference = null): void
     {
         if (! $target) {
             return;
         }
 
-        SendFonnteMessage::dispatch($target, $message);
+        $log = NotificationLog::query()->create([
+            'channel' => 'whatsapp',
+            'recipient' => $target,
+            'title' => $title,
+            'message' => $message,
+            'status' => NotificationStatus::Pending,
+            'reference_type' => $reference ? $reference::class : null,
+            'reference_id' => $reference?->id,
+            'attempts' => 0,
+        ]);
+
+        SendFonnteMessage::dispatch($target, $message, $log->id);
     }
 }

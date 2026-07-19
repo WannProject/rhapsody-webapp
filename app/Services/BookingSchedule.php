@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\SlotStatus;
 use App\Models\Booking;
 use App\Models\Equipment;
+use App\Models\SlotBlock;
 use App\Models\StudioSetting;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -66,7 +68,9 @@ class BookingSchedule
         $this->releaseExpiredHolds($date);
 
         return ! $this->conflictingBookings($date, $startsAt, $endsAt, $ignoreBooking)
-            ->exists();
+                ->exists()
+            && ! $this->conflictingBlocks($date, $startsAt, $endsAt)
+                ->exists();
     }
 
     public function lockSlotAvailable(string $date, string $startsAt, string $endsAt, ?Booking $ignoreBooking = null): bool
@@ -74,8 +78,11 @@ class BookingSchedule
         $this->releaseExpiredHolds($date);
 
         return ! $this->conflictingBookings($date, $startsAt, $endsAt, $ignoreBooking)
-            ->lockForUpdate()
-            ->exists();
+                ->lockForUpdate()
+                ->exists()
+            && ! $this->conflictingBlocks($date, $startsAt, $endsAt)
+                ->lockForUpdate()
+                ->exists();
     }
 
     public function holdUntil(): CarbonImmutable
@@ -111,6 +118,17 @@ class BookingSchedule
     }
 
     /**
+     * @return Builder<SlotBlock>
+     */
+    public function conflictingBlocks(string $date, string $startsAt, string $endsAt): Builder
+    {
+        return SlotBlock::query()
+            ->whereDate('booking_date', $date)
+            ->where('starts_at', '<', $endsAt)
+            ->where('ends_at', '>', $startsAt);
+    }
+
+    /**
      * @return Collection<int, mixed>
      */
     public function slotsForDate(string $date, StudioSetting $studio): Collection
@@ -124,39 +142,65 @@ class BookingSchedule
             ->active()
             ->whereDate('booking_date', $date)
             ->get();
+        $blocks = SlotBlock::query()
+            ->whereDate('booking_date', $date)
+            ->get();
 
         return collect(range(0, 100))
             ->map(fn (int $index) => $open->addMinutes($duration * $index))
             ->takeWhile(fn (CarbonImmutable $start) => $start->addMinutes($duration)->lte($close))
-            ->map(function (CarbonImmutable $start) use ($bookings, $duration, $studio) {
+            ->map(function (CarbonImmutable $start) use ($bookings, $blocks, $duration, $studio) {
                 $end = $start->addMinutes($duration);
+                $startsAt = $start->format('H:i:s');
+                $endsAt = $end->format('H:i:s');
+
                 $booking = $bookings->first(fn (Booking $booking) => (
-                    $booking->starts_at < $end->format('H:i:s')
-                    && $booking->ends_at > $start->format('H:i:s')
+                    $booking->starts_at < $endsAt
+                    && $booking->ends_at > $startsAt
                 ));
+
+                $block = $blocks->first(fn (SlotBlock $block) => (
+                    $block->starts_at < $endsAt
+                    && $block->ends_at > $startsAt
+                ));
+
+                $status = $this->slotStatus($booking, $block);
 
                 return [
                     'time' => $start->format('H:i'),
                     'endsAt' => $end->format('H:i'),
-                    'label' => $booking ? $this->slotLabel($booking) : 'Tersedia',
+                    'status' => $status->value,
+                    'statusLabel' => $status->label(),
                     'price' => 'Rp '.number_format($studio->hourly_rate * ($duration / 60), 0, ',', '.'),
-                    'available' => ! $booking,
+                    'available' => $status->isBookable(),
                     'booking' => $booking ? [
                         'code' => $booking->code,
                         'status' => $booking->status->value,
                         'customerName' => $booking->customer_name,
+                    ] : null,
+                    'block' => $block ? [
+                        'id' => $block->id,
+                        'reason' => $block->reason,
                     ] : null,
                 ];
             })
             ->values();
     }
 
-    private function slotLabel(Booking $booking): string
+    private function slotStatus(?Booking $booking, ?SlotBlock $block): SlotStatus
     {
-        if ($booking->status === BookingStatus::Pending && $booking->held_until) {
-            return 'Ditahan sementara';
+        if ($block) {
+            return SlotStatus::Blocked;
         }
 
-        return $booking->status->label();
+        if (! $booking) {
+            return SlotStatus::Available;
+        }
+
+        if ($booking->status === BookingStatus::Pending && $booking->held_until) {
+            return SlotStatus::Held;
+        }
+
+        return SlotStatus::Booked;
     }
 }

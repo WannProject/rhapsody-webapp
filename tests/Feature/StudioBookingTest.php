@@ -258,7 +258,8 @@ class StudioBookingTest extends TestCase
         $heldSlot = $slots->firstWhere('time', '09:00');
 
         $this->assertFalse($heldSlot['available']);
-        $this->assertSame('Ditahan sementara', $heldSlot['label']);
+        $this->assertSame('held', $heldSlot['status']);
+        $this->assertSame('Ditahan sementara', $heldSlot['statusLabel']);
 
         $heldBooking->update([
             'status' => BookingStatus::Expired,
@@ -270,7 +271,8 @@ class StudioBookingTest extends TestCase
         $releasedSlot = $slots->firstWhere('time', '09:00');
 
         $this->assertTrue($releasedSlot['available']);
-        $this->assertSame('Tersedia', $releasedSlot['label']);
+        $this->assertSame('available', $releasedSlot['status']);
+        $this->assertSame('Tersedia', $releasedSlot['statusLabel']);
     }
 
     public function test_terminal_booking_statuses_do_not_block_slots(): void
