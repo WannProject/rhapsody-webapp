@@ -15,6 +15,7 @@ use App\Services\BookingSchedule;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -52,7 +53,7 @@ class BookingController extends Controller
         $startsAt = $validated['starts_at'];
         $endsAt = $schedule->endsAt($studio, $startsAt);
 
-        $booking = DB::transaction(function () use ($schedule, $studio, $validated, $startsAt, $endsAt, $user, $request) {
+        $booking = DB::transaction(function () use ($schedule, $studio, $validated, $startsAt, $endsAt, $user) {
             StudioSetting::query()->whereKey($studio->id)->lockForUpdate()->firstOrFail();
 
             if (! $schedule->lockSlotAvailable($validated['booking_date'], $startsAt, $endsAt)) {
@@ -84,7 +85,7 @@ class BookingController extends Controller
                 'additional_price' => $additionalPrice,
                 'total_price' => $basePrice + $additionalPrice,
                 'status' => BookingStatus::Pending,
-                'payment_status' => PaymentStatus::Unpaid,
+                'payment_status' => PaymentStatus::Pending,
                 'held_until' => $schedule->holdUntil(),
                 'notes' => $validated['notes'] ?? null,
                 'customer_equipment_notes' => $validated['customer_equipment_notes'] ?? null,
@@ -119,7 +120,7 @@ class BookingController extends Controller
         $startsAt = $validated['starts_at'];
         $endsAt = $schedule->endsAt($studio, $startsAt);
 
-        DB::transaction(function () use ($booking, $schedule, $studio, $validated, $startsAt, $endsAt, $request) {
+        DB::transaction(function () use ($booking, $schedule, $studio, $validated, $startsAt, $endsAt) {
             StudioSetting::query()->whereKey($studio->id)->lockForUpdate()->firstOrFail();
 
             if (! $schedule->lockSlotAvailable($validated['booking_date'], $startsAt, $endsAt, $booking)) {
@@ -159,7 +160,7 @@ class BookingController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking berhasil diperbarui.')]);
 
-        return to_route('bookings', ['date' => $booking->booking_date->toDateString()]);
+        return to_route('orders');
     }
 
     public function updateStatus(UpdateBookingStatusRequest $request, Booking $booking): RedirectResponse
@@ -167,11 +168,28 @@ class BookingController extends Controller
         $validated = $request->validated();
         $status = BookingStatus::from($validated['status']);
 
+        if ($status === BookingStatus::Completed && $booking->payment_status !== PaymentStatus::Paid) {
+            throw ValidationException::withMessages([
+                'status' => __('Booking hanya bisa diselesaikan setelah pembayaran lunas.'),
+            ]);
+        }
+
+        if ($status === BookingStatus::Cancelled && $booking->payment_status === PaymentStatus::Paid) {
+            throw ValidationException::withMessages([
+                'status' => __('Booking lunas harus masuk proses refund, bukan dibatalkan manual.'),
+            ]);
+        }
+
+        if ($status === BookingStatus::Refunded && $booking->payment_status !== PaymentStatus::Refunded) {
+            throw ValidationException::withMessages([
+                'status' => __('Status refund mengikuti webhook/rekonsiliasi pembayaran.'),
+            ]);
+        }
+
         $booking->update([
             'status' => $status,
-            'payment_status' => PaymentStatus::from($validated['payment_status']),
             'admin_notes' => $validated['admin_notes'] ?? null,
-            'confirmed_at' => $status === BookingStatus::Confirmed && ! $booking->confirmed_at
+            'confirmed_at' => in_array($status, [BookingStatus::Confirmed, BookingStatus::Completed], true) && ! $booking->confirmed_at
                 ? now()
                 : $booking->confirmed_at,
             'cancelled_at' => $status === BookingStatus::Cancelled
@@ -182,15 +200,13 @@ class BookingController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Status booking diperbarui.')]);
 
-        return to_route('bookings', ['date' => $booking->booking_date->toDateString()]);
+        return to_route('orders');
     }
 
     public function destroy(Booking $booking): RedirectResponse
     {
         $user = request()->user();
         $isAdmin = $user->isAdmin();
-        $date = $booking->booking_date->toDateString();
-
         if ($isAdmin) {
             $booking->delete();
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking dihapus.')]);
@@ -199,7 +215,6 @@ class BookingController extends Controller
 
             $booking->update([
                 'status' => BookingStatus::Cancelled,
-                'payment_status' => PaymentStatus::Cancelled,
                 'cancelled_at' => now(),
                 'held_until' => null,
             ]);
@@ -207,7 +222,7 @@ class BookingController extends Controller
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking dibatalkan.')]);
         }
 
-        return to_route('bookings', ['date' => $date]);
+        return to_route('orders');
     }
 
     /**
@@ -318,8 +333,8 @@ class BookingController extends Controller
 
     private function durationMinutes(Booking $booking): int
     {
-        $start = \Illuminate\Support\Carbon::parse($booking->booking_date->toDateString().' '.$booking->starts_at);
-        $end = \Illuminate\Support\Carbon::parse($booking->booking_date->toDateString().' '.$booking->ends_at);
+        $start = Carbon::parse($booking->booking_date->toDateString().' '.$booking->starts_at);
+        $end = Carbon::parse($booking->booking_date->toDateString().' '.$booking->ends_at);
 
         return (int) $start->diffInMinutes($end);
     }

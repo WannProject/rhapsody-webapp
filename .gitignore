@@ -28,4 +28,9 @@ yarn-error.log
 /.vscode
 /.zed
 
+/.agents
+/.claude
+/.codebase-memory
+/.codex
+
 DEPLOY_CPANEL.md

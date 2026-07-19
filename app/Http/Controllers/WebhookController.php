@@ -27,6 +27,19 @@ class WebhookController extends Controller
         }
 
         $payload = $request->all();
+        $event = $payload['event'] ?? '';
+        $data = is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
+
+        if ($this->isPayoutWebhook($event, $data)) {
+            $withdrawal = $this->walletService->syncWithdrawalFromPayoutWebhook($data);
+
+            if (! $withdrawal) {
+                return response()->json(['message' => 'Withdrawal not found'], 404);
+            }
+
+            return response()->json(['message' => 'OK']);
+        }
+
         $externalId = $payload['external_id'] ?? null;
 
         if (! $externalId) {
@@ -43,7 +56,6 @@ class WebhookController extends Controller
         }
 
         $status = $payload['status'] ?? '';
-        $event = $payload['event'] ?? '';
 
         match (true) {
             in_array($status, ['PAID', 'SETTLED', 'SETTLING'], true) || $event === 'invoice.paid' => $this->paymentService->markAsPaid($payment, $payload),
@@ -71,5 +83,18 @@ class WebhookController extends Controller
         }
 
         return response()->json(['message' => 'OK']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function isPayoutWebhook(string $event, array $payload): bool
+    {
+        if (str_starts_with($event, 'payout.')) {
+            return true;
+        }
+
+        return isset($payload['reference_id'])
+            && str_starts_with((string) $payload['reference_id'], 'withdrawal-');
     }
 }

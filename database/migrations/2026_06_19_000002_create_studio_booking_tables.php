@@ -64,11 +64,12 @@ return new class extends Migration
             $table->date('booking_date');
             $table->time('starts_at');
             $table->time('ends_at');
+            $table->string('active_slot_key')->nullable()->unique('bookings_active_slot_key_unique');
             $table->unsignedInteger('base_price')->default(0);
             $table->unsignedInteger('additional_price')->default(0);
             $table->unsignedInteger('total_price')->default(0);
             $table->string('status')->default(BookingStatus::Pending->value);
-            $table->string('payment_status')->default(PaymentStatus::Unpaid->value);
+            $table->string('payment_status')->default(PaymentStatus::Pending->value);
             $table->text('notes')->nullable();
             $table->text('customer_equipment_notes')->nullable();
             $table->text('admin_notes')->nullable();

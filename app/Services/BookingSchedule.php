@@ -101,6 +101,7 @@ class BookingSchedule
                 'status' => BookingStatus::Expired->value,
                 'payment_status' => PaymentStatus::Expired->value,
                 'cancelled_at' => now(),
+                'active_slot_key' => null,
             ]);
     }
 

@@ -1,9 +1,21 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    ArrowRight,
+    CalendarDays,
+    CheckCircle2,
+    Clock,
+    CreditCard,
+    Guitar,
+    ReceiptText,
+    RotateCcw,
+    SlidersHorizontal,
+} from 'lucide-react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import {
     Select,
     SelectContent,
@@ -47,6 +59,8 @@ type BookingItem = {
     customerName: string;
     customerEmail: string;
     customerPhone: string | null;
+    bandName: string | null;
+    contactName: string | null;
     bookingDate: string;
     startsAt: string;
     endsAt: string;
@@ -88,9 +102,20 @@ type Stats = {
     confirmedBookings: number;
     paidBookings: number;
 };
+type FilterOption = {
+    value: string;
+    label: string;
+};
+type BookingFilters = {
+    filter_date: string;
+    band: string;
+    status: string;
+    payment_status: string;
+};
 
 type Props = {
     auth: Auth;
+    pageMode: 'booking' | 'orders';
     isAdmin: boolean;
     selectedDate: string;
     userRole: string;
@@ -107,31 +132,25 @@ type Props = {
     paymentMethods: PaymentMethodItem[];
     allPaymentMethods: PaymentMethodItem[];
     bookings: BookingItem[];
+    activeBookings: BookingItem[];
+    historyBookings: BookingItem[];
     stats: Stats;
+    filters: BookingFilters;
+    bookingStatusOptions: FilterOption[];
+    paymentStatusOptions: FilterOption[];
 };
 
-const bookingStatuses = [
-    ['pending', 'Menunggu'],
-    ['confirmed', 'Terkonfirmasi'],
-    ['cancelled', 'Dibatalkan'],
-    ['completed', 'Selesai'],
-    ['expired', 'Kedaluwarsa'],
-    ['refunded', 'Refunded'],
-];
-const paymentStatuses = [
-    ['unpaid', 'Belum Dibayar'],
-    ['pending_confirmation', 'Menunggu Konfirmasi'],
-    ['paid', 'Lunas'],
-    ['failed', 'Gagal'],
-    ['expired', 'Kedaluwarsa'],
-    ['cancelled', 'Dibatalkan'],
-    ['refunded', 'Refunded'],
-];
 const methodTypes = [
     ['qris', 'QRIS'],
     ['virtual_account', 'Virtual Account'],
     ['bank_transfer', 'Transfer Bank'],
     ['cash', 'Tunai'],
+];
+const bookingFlowSteps = [
+    { icon: CalendarDays, label: 'Tanggal' },
+    { icon: Clock, label: 'Jam' },
+    { icon: Guitar, label: 'Alat' },
+    { icon: ReceiptText, label: 'Ringkasan' },
 ];
 
 export default function BookingsPage() {
@@ -140,6 +159,8 @@ export default function BookingsPage() {
         isAdmin,
         stats,
         bookings,
+        activeBookings,
+        historyBookings,
         scheduleSlots,
         slotBlocks,
         paymentMethods,
@@ -147,12 +168,24 @@ export default function BookingsPage() {
         selectedDate,
         auth,
         equipments,
+        filters,
+        bookingStatusOptions,
+        paymentStatusOptions,
+        pageMode,
     } = props;
-    const availableSlots = scheduleSlots.filter((s) => s.available);
+    const isOrdersPage = pageMode === 'orders';
+    const title = isOrdersPage ? 'Info Pesanan' : 'Booking';
+    const description = isOrdersPage
+        ? isAdmin
+            ? 'Filter dan kelola seluruh pesanan studio.'
+            : 'Pantau pesanan aktif dan riwayat booking Anda.'
+        : isAdmin
+          ? 'Kelola jadwal studio dan blokir slot yang tidak tersedia.'
+          : 'Pilih tanggal, jam, alat, lalu lanjutkan pembayaran.';
 
     return (
         <>
-            <Head title="RHAPSODY | Bookings" />
+            <Head title={`RHAPSODY | ${title}`} />
             <RhapsodyLayout>
                 <div className="mx-auto grid max-w-7xl gap-10">
                     <header className="grid gap-3">
@@ -160,264 +193,119 @@ export default function BookingsPage() {
                             {isAdmin ? 'Admin Studio' : 'Pelanggan'}
                         </p>
                         <h1 className="font-display text-[40px] leading-[1.05] font-extrabold tracking-tight text-primary md:text-[48px]">
-                            Bookings
+                            {title}
                         </h1>
                         <p className="text-lg text-muted-foreground/80">
-                            {isAdmin
-                                ? 'Kelola semua booking, status, dan metode pembayaran.'
-                                : 'Buat booking baru dan pantau status booking Anda.'}
+                            {description}
                         </p>
                     </header>
 
                     {/* Stats Grid */}
-                    <section className="grid gap-3 md:grid-cols-4">
-                        {[
-                            ['Total Booking', stats.totalBookings],
-                            ['Menunggu', stats.pendingBookings],
-                            ['Terkonfirmasi', stats.confirmedBookings],
-                            ['Lunas', stats.paidBookings],
-                        ].map(([label, value]) => (
-                            <div
-                                key={label}
-                                className="rounded-lg border border-border bg-card p-5"
-                            >
-                                <p className="text-xs font-bold tracking-[0.22em] text-muted-foreground uppercase">
-                                    {label}
-                                </p>
-                                <p className="mt-3 font-display text-[32px] leading-none font-bold text-primary">
-                                    {value}
-                                </p>
-                            </div>
-                        ))}
-                    </section>
+                    {isOrdersPage && (
+                        <section className="grid gap-3 md:grid-cols-4">
+                            {[
+                                ['Total Booking', stats.totalBookings],
+                                ['Menunggu', stats.pendingBookings],
+                                ['Terkonfirmasi', stats.confirmedBookings],
+                                ['Lunas', stats.paidBookings],
+                            ].map(([label, value]) => (
+                                <div
+                                    key={label}
+                                    className="rounded-lg border border-border bg-card p-5"
+                                >
+                                    <p className="text-xs font-bold tracking-[0.22em] text-muted-foreground uppercase">
+                                        {label}
+                                    </p>
+                                    <p className="mt-3 font-display text-[32px] leading-none font-bold text-primary">
+                                        {value}
+                                    </p>
+                                </div>
+                            ))}
+                        </section>
+                    )}
 
                     {/* Slot Grid */}
-                    <section className="grid gap-5">
-                        <div>
-                            <h2 className="font-display text-2xl font-bold text-primary">
-                                Jadwal {selectedDate}
-                            </h2>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Status tiap slot untuk tanggal terpilih.
-                            </p>
-                        </div>
-                        <SlotGrid slots={scheduleSlots} />
-                    </section>
+                    {!isOrdersPage && (
+                        <section className="grid gap-5">
+                            <div>
+                                <h2 className="font-display text-2xl font-bold text-primary">
+                                    Jadwal {selectedDate}
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Status tiap slot untuk tanggal terpilih.
+                                </p>
+                            </div>
+                            <SlotGrid slots={scheduleSlots} />
+                        </section>
+                    )}
 
                     {/* Slot Block Manager (Superadmin) */}
-                    {isAdmin && (
+                    {isAdmin && !isOrdersPage && (
                         <SlotBlockManager
                             selectedDate={selectedDate}
                             slotBlocks={slotBlocks}
                         />
                     )}
 
-                    {/* Booking Form (Customer) */}
-                    {!isAdmin && (
-                        <section className="grid gap-5">
-                            <div>
-                                <h2 className="font-display text-2xl font-bold text-primary">
-                                    Buat Booking
-                                </h2>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Pilih tanggal, jam kosong, dan metode
-                                    pembayaran.
-                                </p>
-                            </div>
-                            <Form
-                                action="/bookings"
-                                method="post"
-                                className="grid gap-4 rounded-lg border border-border bg-card p-5 md:grid-cols-2"
-                                resetOnSuccess={['notes', 'customer_equipment_notes']}
-                            >
-                                {({ processing, errors }) => (
-                                    <>
-                                        <div className="grid gap-2">
-                                            <Label
-                                                htmlFor="booking_date"
-                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-                                            >
-                                                Tanggal
-                                            </Label>
-                                            <Input
-                                                id="booking_date"
-                                                name="booking_date"
-                                                type="date"
-                                                defaultValue={selectedDate}
-                                                required
-                                            />
-                                            <InputError
-                                                message={errors.booking_date}
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
-                                                Jam
-                                            </Label>
-                                            <Select name="starts_at" required>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih jam kosong" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {availableSlots.map((s) => (
-                                                        <SelectItem
-                                                            key={s.time}
-                                                            value={s.time}
-                                                        >
-                                                            {s.time} -{' '}
-                                                            {s.endsAt} (
-                                                            {s.price})
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <InputError
-                                                message={errors.starts_at}
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
-                                                Metode Bayar
-                                            </Label>
-                                            <Select
-                                                name="payment_method_id"
-                                                required
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih metode" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {paymentMethods.map((m) => (
-                                                        <SelectItem
-                                                            key={m.id}
-                                                            value={String(m.id)}
-                                                        >
-                                                            {m.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <InputError
-                                                message={
-                                                    errors.payment_method_id
-                                                }
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label
-                                                htmlFor="customer_phone"
-                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-                                            >
-                                                WhatsApp
-                                            </Label>
-                                            <Input
-                                                id="customer_phone"
-                                                name="customer_phone"
-                                                type="tel"
-                                                defaultValue={
-                                                    (auth.user.whatsapp_number as
-                                                        | string
-                                                        | null) ??
-                                                    auth.user.phone ??
-                                                    ''
-                                                }
-                                                placeholder="62812xxxxxxx"
-                                            />
-                                            <InputError
-                                                message={errors.customer_phone}
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <EquipmentPicker
-                                                equipments={equipments}
-                                                errors={errors}
-                                            />
-                                        </div>
-                                        <div className="grid gap-2 md:col-span-2">
-                                            <Label
-                                                htmlFor="customer_equipment_notes"
-                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-                                            >
-                                                Alat Tambahan Sendiri
-                                            </Label>
-                                            <Input
-                                                id="customer_equipment_notes"
-                                                name="customer_equipment_notes"
-                                                placeholder="Contoh: gitar sendiri, pedal efek"
-                                            />
-                                            <InputError
-                                                message={
-                                                    errors.customer_equipment_notes
-                                                }
-                                            />
-                                        </div>
-                                        <div className="grid gap-2 md:col-span-2">
-                                            <Label
-                                                htmlFor="notes"
-                                                className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-                                            >
-                                                Catatan
-                                            </Label>
-                                            <Input
-                                                id="notes"
-                                                name="notes"
-                                                placeholder="Contoh: recording vocal"
-                                            />
-                                            <InputError
-                                                message={errors.notes}
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <Button
-                                                disabled={
-                                                    processing ||
-                                                    availableSlots.length === 0
-                                                }
-                                                className="w-full"
-                                            >
-                                                Booking Sekarang
-                                            </Button>
-                                        </div>
-                                    </>
-                                )}
-                            </Form>
-                        </section>
+                    {isAdmin && isOrdersPage && (
+                        <AdminBookingFilters
+                            selectedDate={selectedDate}
+                            filters={filters}
+                            bookingStatusOptions={bookingStatusOptions}
+                            paymentStatusOptions={paymentStatusOptions}
+                        />
                     )}
 
-                    {/* Booking List */}
-                    <section className="grid gap-5">
-                        <div>
-                            <h2 className="font-display text-2xl font-bold text-primary">
-                                {isAdmin ? 'Semua Booking' : 'Booking Saya'}
-                            </h2>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {isAdmin
-                                    ? 'Kelola status dan pembayaran semua booking.'
-                                    : 'Pantau dan kelola booking Anda.'}
-                            </p>
-                        </div>
-                        {bookings.length === 0 ? (
-                            <div className="rounded-lg border border-dashed border-border p-10 text-center">
-                                <p className="font-display text-lg font-semibold text-muted-foreground">
-                                    Belum ada booking
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-4">
-                                {bookings.map((b) => (
-                                    <BookingCard
-                                        key={b.code}
-                                        booking={b}
-                                        isAdmin={isAdmin}
-                                        paymentMethods={paymentMethods}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </section>
+                    {/* Booking Form (Customer) */}
+                    {!isAdmin && !isOrdersPage && (
+                        <CustomerBookingFlow
+                            auth={auth}
+                            selectedDate={selectedDate}
+                            scheduleSlots={scheduleSlots}
+                            paymentMethods={paymentMethods}
+                            equipments={equipments}
+                            studio={props.studio}
+                        />
+                    )}
+
+                    {isOrdersPage && isAdmin ? (
+                        <BookingListSection
+                            id="info-pesanan"
+                            title="Info Pesanan"
+                            description="Kelola seluruh pesanan studio dan tindak lanjuti status booking."
+                            bookings={bookings}
+                            emptyMessage="Belum ada booking"
+                            isAdmin={isAdmin}
+                            paymentMethods={paymentMethods}
+                            bookingStatusOptions={bookingStatusOptions}
+                        />
+                    ) : isOrdersPage ? (
+                        <>
+                            <BookingListSection
+                                id="info-pesanan"
+                                title="Pesanan Aktif"
+                                description="Booking yang masih menunggu pembayaran atau sudah terkonfirmasi."
+                                bookings={activeBookings}
+                                emptyMessage="Belum ada pesanan aktif"
+                                isAdmin={isAdmin}
+                                paymentMethods={paymentMethods}
+                                bookingStatusOptions={bookingStatusOptions}
+                            />
+                            <BookingListSection
+                                id="riwayat-pesanan"
+                                title="Riwayat Pesanan"
+                                description="Booking yang sudah selesai, dibatalkan, kedaluwarsa, atau refund."
+                                bookings={historyBookings}
+                                emptyMessage="Belum ada riwayat pesanan"
+                                isAdmin={isAdmin}
+                                paymentMethods={paymentMethods}
+                                bookingStatusOptions={bookingStatusOptions}
+                            />
+                        </>
+                    ) : null}
 
                     {/* Payment Methods Manager (Admin) */}
-                    {isAdmin && (
+                    {isAdmin && isOrdersPage && (
                         <PaymentMethodManager
                             allPaymentMethods={allPaymentMethods}
                         />
@@ -428,7 +316,575 @@ export default function BookingsPage() {
     );
 }
 
-function SlotGrid({ slots }: { slots: Slot[] }) {
+function AdminBookingFilters({
+    selectedDate,
+    filters,
+    bookingStatusOptions,
+    paymentStatusOptions,
+}: {
+    selectedDate: string;
+    filters: BookingFilters;
+    bookingStatusOptions: FilterOption[];
+    paymentStatusOptions: FilterOption[];
+}) {
+    const [filterDate, setFilterDate] = useState(filters.filter_date);
+    const [band, setBand] = useState(filters.band);
+    const [status, setStatus] = useState(filters.status || 'all');
+    const [paymentStatus, setPaymentStatus] = useState(
+        filters.payment_status || 'all',
+    );
+
+    const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        router.get(
+            '/orders',
+            {
+                date: selectedDate,
+                filter_date: filterDate || undefined,
+                band: band || undefined,
+                status: status === 'all' ? undefined : status,
+                payment_status:
+                    paymentStatus === 'all' ? undefined : paymentStatus,
+            },
+            {
+                preserveScroll: true,
+                preserveState: false,
+                replace: true,
+            },
+        );
+    };
+
+    const resetFilters = () => {
+        setFilterDate('');
+        setBand('');
+        setStatus('all');
+        setPaymentStatus('all');
+
+        router.get(
+            '/orders',
+            { date: selectedDate },
+            {
+                preserveScroll: true,
+                preserveState: false,
+                replace: true,
+            },
+        );
+    };
+
+    return (
+        <section id="orders-filter" className="grid scroll-mt-28 gap-5">
+            <div>
+                <h2 className="font-display text-2xl font-bold text-primary">
+                    Filter Info Pesanan
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Saring pesanan berdasarkan tanggal, nama band, status
+                    booking, dan status pembayaran.
+                </p>
+            </div>
+
+            <form
+                onSubmit={applyFilters}
+                className="grid gap-3 rounded-lg border border-border bg-card p-5 lg:grid-cols-[minmax(150px,1fr)_minmax(180px,1.2fr)_minmax(160px,1fr)_minmax(170px,1fr)_auto]"
+            >
+                <div className="grid gap-2">
+                    <Label
+                        htmlFor="filter_date"
+                        className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                    >
+                        Tanggal
+                    </Label>
+                    <Input
+                        id="filter_date"
+                        type="date"
+                        value={filterDate}
+                        onChange={(event) => setFilterDate(event.target.value)}
+                    />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label
+                        htmlFor="band"
+                        className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                    >
+                        Nama Band
+                    </Label>
+                    <Input
+                        id="band"
+                        value={band}
+                        onChange={(event) => setBand(event.target.value)}
+                        placeholder="Cari band atau pemesan"
+                    />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                        Status Booking
+                    </Label>
+                    <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Semua status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua status</SelectItem>
+                            {bookingStatusOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="grid gap-2">
+                    <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                        Status Pembayaran
+                    </Label>
+                    <Select
+                        value={paymentStatus}
+                        onValueChange={setPaymentStatus}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Semua pembayaran" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                Semua pembayaran
+                            </SelectItem>
+                            {paymentStatusOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex items-end gap-2">
+                    <Button type="submit">
+                        <SlidersHorizontal className="size-4" />
+                        Terapkan
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={resetFilters}
+                    >
+                        <RotateCcw className="size-4" />
+                        Reset
+                    </Button>
+                </div>
+            </form>
+        </section>
+    );
+}
+
+function CustomerBookingFlow({
+    auth,
+    selectedDate,
+    scheduleSlots,
+    paymentMethods,
+    equipments,
+    studio,
+}: {
+    auth: Auth;
+    selectedDate: string;
+    scheduleSlots: Slot[];
+    paymentMethods: PaymentMethodItem[];
+    equipments: EquipmentOption[];
+    studio: Props['studio'];
+}) {
+    const availableSlots = useMemo(
+        () => scheduleSlots.filter((slot) => slot.available),
+        [scheduleSlots],
+    );
+    const [selectedTime, setSelectedTime] = useState(
+        availableSlots[0]?.time ?? '',
+    );
+    const [paymentMethodId, setPaymentMethodId] = useState(
+        paymentMethods[0] ? String(paymentMethods[0].id) : '',
+    );
+    const [equipmentSelection, setEquipmentSelection] = useState<
+        Record<number, number>
+    >({});
+    const [customerEquipmentNotes, setCustomerEquipmentNotes] = useState('');
+
+    const selectedSlot = useMemo(
+        () => scheduleSlots.find((slot) => slot.time === selectedTime) ?? null,
+        [scheduleSlots, selectedTime],
+    );
+    const selectedPaymentMethod = paymentMethods.find(
+        (method) => String(method.id) === paymentMethodId,
+    );
+    const selectedEquipments = equipments
+        .map((equipment) => ({
+            ...equipment,
+            quantity: equipmentSelection[equipment.id] ?? 0,
+        }))
+        .filter((equipment) => equipment.quantity > 0);
+    const basePrice = Math.round(
+        studio.hourlyRate * (studio.slotDurationMinutes / 60),
+    );
+    const additionalPrice = selectedEquipments.reduce(
+        (total, equipment) =>
+            total + equipment.additionalPrice * equipment.quantity,
+        0,
+    );
+    const totalPrice = basePrice + additionalPrice;
+    const canSubmit = Boolean(selectedSlot?.available && paymentMethodId);
+
+    useEffect(() => {
+        if (!selectedSlot?.available) {
+            setSelectedTime(availableSlots[0]?.time ?? '');
+        }
+    }, [availableSlots, selectedSlot]);
+
+    const updateDate = (date: string) => {
+        router.get(
+            '/bookings',
+            { date },
+            {
+                preserveScroll: true,
+                preserveState: false,
+                replace: true,
+            },
+        );
+    };
+
+    const setEquipmentQuantity = (equipmentId: number, quantity: number) => {
+        setEquipmentSelection((current) => {
+            const next = { ...current };
+
+            if (quantity <= 0) {
+                delete next[equipmentId];
+            } else {
+                next[equipmentId] = quantity;
+            }
+
+            return next;
+        });
+    };
+
+    return (
+        <section id="booking-form" className="grid scroll-mt-28 gap-5">
+            <div>
+                <h2 className="font-display text-2xl font-bold text-primary">
+                    Buat Booking
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Pilih tanggal, slot, alat, lalu lanjutkan pembayaran.
+                </p>
+            </div>
+
+            <div className="grid gap-2 md:grid-cols-4">
+                {bookingFlowSteps.map(({ icon: Icon, label }, index) => (
+                    <div
+                        key={label}
+                        className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
+                    >
+                        <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                            <Icon className="size-4" />
+                        </span>
+                        <div>
+                            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                                Langkah {index + 1}
+                            </p>
+                            <p className="text-sm font-semibold text-primary">
+                                {label}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <Form
+                action="/bookings"
+                method="post"
+                className="grid gap-6 rounded-lg border border-border bg-card p-5"
+                resetOnSuccess={['notes', 'customer_equipment_notes']}
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label
+                                    htmlFor="booking_date"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Tanggal
+                                </Label>
+                                <Input
+                                    id="booking_date"
+                                    name="booking_date"
+                                    type="date"
+                                    min={formatDateInput(new Date())}
+                                    value={selectedDate}
+                                    required
+                                    onChange={(event) =>
+                                        updateDate(event.target.value)
+                                    }
+                                />
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        ['Hari ini', new Date()],
+                                        [
+                                            'Besok',
+                                            new Date(
+                                                Date.now() +
+                                                    24 * 60 * 60 * 1000,
+                                            ),
+                                        ],
+                                    ].map(([label, date]) => {
+                                        const value = formatDateInput(
+                                            date as Date,
+                                        );
+
+                                        return (
+                                            <Button
+                                                key={label as string}
+                                                type="button"
+                                                variant={
+                                                    selectedDate === value
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                                onClick={() =>
+                                                    updateDate(value)
+                                                }
+                                            >
+                                                <CalendarDays className="size-4" />
+                                                {label as string}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <InputError message={errors.booking_date} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Jam Tersedia
+                                </Label>
+                                <Select
+                                    name="starts_at"
+                                    value={selectedTime}
+                                    onValueChange={setSelectedTime}
+                                    required
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Pilih jam kosong" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableSlots.map((slot) => (
+                                            <SelectItem
+                                                key={slot.time}
+                                                value={slot.time}
+                                            >
+                                                {slot.time} - {slot.endsAt} (
+                                                {slot.price})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.starts_at} />
+                            </div>
+                        </div>
+
+                        <SlotGrid
+                            slots={scheduleSlots}
+                            selectedTime={selectedTime}
+                            onSelectSlot={setSelectedTime}
+                        />
+
+                        <EquipmentPicker
+                            equipments={equipments}
+                            errors={errors}
+                            selection={equipmentSelection}
+                            onQuantityChange={setEquipmentQuantity}
+                        />
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label
+                                    htmlFor="customer_equipment_notes"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Alat Tambahan Sendiri
+                                </Label>
+                                <Input
+                                    id="customer_equipment_notes"
+                                    name="customer_equipment_notes"
+                                    value={customerEquipmentNotes}
+                                    onChange={(event) =>
+                                        setCustomerEquipmentNotes(
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Contoh: gitar sendiri, pedal efek"
+                                />
+                                <InputError
+                                    message={errors.customer_equipment_notes}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label
+                                    htmlFor="customer_phone"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    WhatsApp
+                                </Label>
+                                <Input
+                                    id="customer_phone"
+                                    name="customer_phone"
+                                    type="tel"
+                                    defaultValue={
+                                        (auth.user.whatsapp_number as
+                                            | string
+                                            | null) ??
+                                        auth.user.phone ??
+                                        ''
+                                    }
+                                    placeholder="62812xxxxxxx"
+                                />
+                                <InputError message={errors.customer_phone} />
+                            </div>
+
+                            <div className="grid gap-2 md:col-span-2">
+                                <Label
+                                    htmlFor="notes"
+                                    className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                                >
+                                    Catatan
+                                </Label>
+                                <Input
+                                    id="notes"
+                                    name="notes"
+                                    placeholder="Contoh: recording vocal"
+                                />
+                                <InputError message={errors.notes} />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 border-t border-border pt-5 lg:grid-cols-[1fr_320px]">
+                            <div className="grid gap-3">
+                                <SummaryRow
+                                    label="Tanggal"
+                                    value={selectedDate}
+                                />
+                                <SummaryRow
+                                    label="Jam"
+                                    value={
+                                        selectedSlot
+                                            ? `${selectedSlot.time} - ${selectedSlot.endsAt}`
+                                            : 'Belum dipilih'
+                                    }
+                                />
+                                <SummaryRow
+                                    label="Metode bayar"
+                                    value={
+                                        selectedPaymentMethod?.name ??
+                                        'Belum dipilih'
+                                    }
+                                />
+                                <SummaryRow
+                                    label="Alat studio"
+                                    value={
+                                        selectedEquipments.length > 0
+                                            ? selectedEquipments
+                                                  .map((equipment) =>
+                                                      equipment.quantity > 1
+                                                          ? `${equipment.name} x${equipment.quantity}`
+                                                          : equipment.name,
+                                                  )
+                                                  .join(', ')
+                                            : 'Tidak ada'
+                                    }
+                                />
+                                <SummaryRow
+                                    label="Alat sendiri"
+                                    value={
+                                        customerEquipmentNotes || 'Tidak ada'
+                                    }
+                                />
+                            </div>
+
+                            <div className="grid content-between gap-4 rounded-lg border border-border bg-muted/30 p-4">
+                                <div className="grid gap-2">
+                                    <SummaryRow
+                                        label="Harga slot"
+                                        value={formatRupiah(basePrice)}
+                                    />
+                                    <SummaryRow
+                                        label="Tambahan alat"
+                                        value={formatRupiah(additionalPrice)}
+                                    />
+                                    <div className="flex items-center justify-between border-t border-border pt-3">
+                                        <span className="text-sm font-semibold text-muted-foreground">
+                                            Total pembayaran
+                                        </span>
+                                        <span className="font-display text-xl font-bold text-primary">
+                                            {formatRupiah(totalPrice)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <Button
+                                    disabled={processing || !canSubmit}
+                                    className="w-full"
+                                >
+                                    <CreditCard className="size-4" />
+                                    Lanjutkan Pembayaran
+                                    <ArrowRight className="size-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </Form>
+        </section>
+    );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="flex items-start justify-between gap-4">
+            <span className="text-sm text-muted-foreground">{label}</span>
+            <span className="text-right text-sm font-semibold text-primary">
+                {value}
+            </span>
+        </div>
+    );
+}
+
+function formatRupiah(value: number): string {
+    return `Rp ${value.toLocaleString('id-ID')}`;
+}
+
+function formatDateInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+function SlotGrid({
+    slots,
+    selectedTime,
+    onSelectSlot,
+}: {
+    slots: Slot[];
+    selectedTime?: string;
+    onSelectSlot?: (time: string) => void;
+}) {
     const tone: Record<Slot['status'], string> = {
         available: 'border-primary/40 bg-primary/5 text-primary',
         held: 'border-amber-500/40 bg-amber-500/10 text-amber-700',
@@ -438,32 +894,51 @@ function SlotGrid({ slots }: { slots: Slot[] }) {
 
     return (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {slots.map((s) => (
-                <div
-                    key={s.time}
-                    className={`rounded-lg border p-4 ${tone[s.status]}`}
-                >
-                    <div className="flex items-center justify-between">
-                        <p className="font-display text-lg font-bold">
-                            {s.time} - {s.endsAt}
-                        </p>
-                        <span className="rounded-full border border-current px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-                            {s.statusLabel}
-                        </span>
-                    </div>
-                    <p className="mt-1 text-xs opacity-80">{s.price}</p>
-                    {s.booking && (
-                        <p className="mt-1 text-xs opacity-80">
-                            {s.booking.customerName} ({s.booking.code})
-                        </p>
-                    )}
-                    {s.block?.reason && (
-                        <p className="mt-1 text-xs opacity-80">
-                            Alasan: {s.block.reason}
-                        </p>
-                    )}
-                </div>
-            ))}
+            {slots.map((s) => {
+                const isSelected = selectedTime === s.time;
+                const interactive = Boolean(onSelectSlot && s.available);
+
+                return (
+                    <button
+                        key={s.time}
+                        type="button"
+                        disabled={!interactive}
+                        onClick={() => onSelectSlot?.(s.time)}
+                        className={`rounded-lg border p-4 text-left transition ${
+                            isSelected
+                                ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                                : ''
+                        } ${
+                            interactive
+                                ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-sm'
+                                : 'cursor-default'
+                        } ${tone[s.status]}`}
+                    >
+                        <div className="flex items-center justify-between">
+                            <p className="font-display text-lg font-bold">
+                                {s.time} - {s.endsAt}
+                            </p>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-current px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+                                {isSelected && (
+                                    <CheckCircle2 className="size-3" />
+                                )}
+                                {s.statusLabel}
+                            </span>
+                        </div>
+                        <p className="mt-1 text-xs opacity-80">{s.price}</p>
+                        {s.booking && (
+                            <p className="mt-1 text-xs opacity-80">
+                                {s.booking.customerName} ({s.booking.code})
+                            </p>
+                        )}
+                        {s.block?.reason && (
+                            <p className="mt-1 text-xs opacity-80">
+                                Alasan: {s.block.reason}
+                            </p>
+                        )}
+                    </button>
+                );
+            })}
             {slots.length === 0 && (
                 <p className="col-span-full text-center text-sm text-muted-foreground">
                     Tidak ada slot untuk tanggal ini.
@@ -481,7 +956,7 @@ function SlotBlockManager({
     slotBlocks: SlotBlockItem[];
 }) {
     return (
-        <section className="grid gap-5">
+        <section id="slot-blocks" className="grid scroll-mt-28 gap-5">
             <div>
                 <h2 className="font-display text-2xl font-bold text-primary">
                     Blokir Slot
@@ -564,9 +1039,13 @@ function SlotBlockManager({
 function EquipmentPicker({
     equipments,
     errors,
+    selection,
+    onQuantityChange,
 }: {
     equipments: EquipmentOption[];
     errors: Record<string, string>;
+    selection?: Record<number, number>;
+    onQuantityChange?: (equipmentId: number, quantity: number) => void;
 }) {
     if (equipments.length === 0) {
         return null;
@@ -584,6 +1063,8 @@ function EquipmentPicker({
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
                 {equipments.map((eq) => {
+                    const quantity = selection?.[eq.id] ?? 0;
+
                     if (eq.isMicrophone) {
                         return (
                             <div
@@ -605,8 +1086,10 @@ function EquipmentPicker({
                                     )}
                                 </div>
                                 <Select
-                                    name={`equipment[${eq.id}]`}
-                                    defaultValue="0"
+                                    value={String(quantity)}
+                                    onValueChange={(value) =>
+                                        onQuantityChange?.(eq.id, Number(value))
+                                    }
                                 >
                                     <SelectTrigger className="w-24">
                                         <SelectValue />
@@ -625,6 +1108,13 @@ function EquipmentPicker({
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {quantity > 0 && (
+                                    <input
+                                        type="hidden"
+                                        name={`equipment[${eq.id}]`}
+                                        value={quantity}
+                                    />
+                                )}
                             </div>
                         );
                     }
@@ -648,9 +1138,21 @@ function EquipmentPicker({
                                 )}
                             </div>
                             <Checkbox
-                                name={`equipment[${eq.id}]`}
-                                value="1"
+                                checked={quantity > 0}
+                                onCheckedChange={(checked) =>
+                                    onQuantityChange?.(
+                                        eq.id,
+                                        checked === true ? 1 : 0,
+                                    )
+                                }
                             />
+                            {quantity > 0 && (
+                                <input
+                                    type="hidden"
+                                    name={`equipment[${eq.id}]`}
+                                    value="1"
+                                />
+                            )}
                         </label>
                     );
                 })}
@@ -669,14 +1171,68 @@ function EquipmentPicker({
     );
 }
 
+function BookingListSection({
+    id,
+    title,
+    description,
+    bookings,
+    emptyMessage,
+    isAdmin,
+    paymentMethods,
+    bookingStatusOptions,
+}: {
+    id?: string;
+    title: string;
+    description: string;
+    bookings: BookingItem[];
+    emptyMessage: string;
+    isAdmin: boolean;
+    paymentMethods: PaymentMethodItem[];
+    bookingStatusOptions: FilterOption[];
+}) {
+    return (
+        <section id={id} className="grid scroll-mt-28 gap-5">
+            <div>
+                <h2 className="font-display text-2xl font-bold text-primary">
+                    {title}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    {description}
+                </p>
+            </div>
+            {bookings.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border p-10 text-center">
+                    <p className="font-display text-lg font-semibold text-muted-foreground">
+                        {emptyMessage}
+                    </p>
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {bookings.map((booking) => (
+                        <BookingCard
+                            key={booking.code}
+                            booking={booking}
+                            isAdmin={isAdmin}
+                            paymentMethods={paymentMethods}
+                            bookingStatusOptions={bookingStatusOptions}
+                        />
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+}
+
 function BookingCard({
     booking: b,
     isAdmin,
     paymentMethods,
+    bookingStatusOptions,
 }: {
     booking: BookingItem;
     isAdmin: boolean;
     paymentMethods: PaymentMethodItem[];
+    bookingStatusOptions: FilterOption[];
 }) {
     return (
         <div className="rounded-lg border border-border bg-card p-5">
@@ -688,10 +1244,15 @@ function BookingCard({
                         </p>
                         {isAdmin && (
                             <span className="text-sm text-muted-foreground">
-                                · {b.customerName}
+                                · {b.bandName ?? b.customerName}
                             </span>
                         )}
                     </div>
+                    {isAdmin && b.contactName && (
+                        <p className="text-sm text-muted-foreground">
+                            Pemesan: {b.contactName}
+                        </p>
+                    )}
                     <p className="mt-1 text-sm text-muted-foreground">
                         {b.bookingDate}, {b.startsAt} - {b.endsAt}
                     </p>
@@ -710,7 +1271,7 @@ function BookingCard({
                             {b.equipments.map((eq) => (
                                 <span
                                     key={eq.id}
-                                    className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide"
+                                    className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
                                 >
                                     {eq.name}
                                     {eq.quantity > 1 ? ` ×${eq.quantity}` : ''}
@@ -730,6 +1291,12 @@ function BookingCard({
                     )}
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Link
+                        href={`/bookings/${b.code}`}
+                        className="inline-flex items-center rounded-md border border-border bg-card px-4 py-1.5 text-[10px] font-bold tracking-wider text-primary uppercase transition hover:bg-muted"
+                    >
+                        Detail Pesanan
+                    </Link>
                     <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         {b.statusLabel}
                     </span>
@@ -741,8 +1308,8 @@ function BookingCard({
                     </span>
                     {b.additionalPrice > 0 && (
                         <span className="rounded-full border border-border bg-card px-3 py-1 text-[10px] tracking-wider text-muted-foreground uppercase">
-                            Base Rp {b.basePrice.toLocaleString('id-ID')} +
-                            Alat Rp {b.additionalPrice.toLocaleString('id-ID')}
+                            Base Rp {b.basePrice.toLocaleString('id-ID')} + Alat
+                            Rp {b.additionalPrice.toLocaleString('id-ID')}
                         </span>
                     )}
                     {b.paymentLinkUrl && b.paymentStatus !== 'paid' && (
@@ -762,7 +1329,7 @@ function BookingCard({
                 <Form
                     action={`/bookings/${b.code}/status`}
                     method="patch"
-                    className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-5"
+                    className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-[minmax(160px,1fr)_minmax(160px,1fr)_minmax(220px,2fr)_auto]"
                 >
                     {({ processing, errors }) => (
                         <>
@@ -771,28 +1338,19 @@ function BookingCard({
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {bookingStatuses.map(([v, l]) => (
-                                        <SelectItem key={v} value={v}>
-                                            {l}
+                                    {bookingStatusOptions.map((option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Select
-                                name="payment_status"
-                                defaultValue={b.paymentStatus}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Bayar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {paymentStatuses.map(([v, l]) => (
-                                        <SelectItem key={v} value={v}>
-                                            {l}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex min-h-10 items-center rounded-md border border-border bg-muted/40 px-3 text-sm font-medium text-muted-foreground">
+                                Bayar: {b.paymentStatusLabel}
+                            </div>
                             <Input
                                 name="admin_notes"
                                 defaultValue={b.adminNotes ?? ''}
@@ -800,11 +1358,10 @@ function BookingCard({
                             />
                             <Button disabled={processing}>Update</Button>
                             <InputError message={errors.status} />
-                            <InputError message={errors.payment_status} />
                         </>
                     )}
                 </Form>
-            ) : b.status === 'pending' ? (
+            ) : b.status === 'pending_payment' ? (
                 <Form
                     action={`/bookings/${b.code}`}
                     method="patch"
@@ -882,7 +1439,7 @@ function BookingCard({
                 </Form>
             ) : null}
 
-            {(isAdmin || b.status === 'pending') && (
+            {(isAdmin || b.status === 'pending_payment') && (
                 <Form
                     action={`/bookings/${b.code}`}
                     method="delete"
@@ -909,7 +1466,7 @@ function PaymentMethodManager({
     allPaymentMethods: PaymentMethodItem[];
 }) {
     return (
-        <section className="grid gap-5">
+        <section id="payment-methods" className="grid scroll-mt-28 gap-5">
             <div>
                 <h2 className="font-display text-2xl font-bold text-primary">
                     Metode Pembayaran
@@ -952,10 +1509,7 @@ function PaymentMethodManager({
                 )}
             </Form>
             {allPaymentMethods.map((m) => (
-                <div
-                    key={m.id}
-                    className="rounded-lg border border-border p-4"
-                >
+                <div key={m.id} className="rounded-lg border border-border p-4">
                     <Form
                         action={`/payment-methods/${m.id}`}
                         method="patch"
@@ -975,7 +1529,11 @@ function PaymentMethodManager({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <Input name="name" defaultValue={m.name} required />
+                                <Input
+                                    name="name"
+                                    defaultValue={m.name}
+                                    required
+                                />
                                 <Input
                                     name="instructions"
                                     defaultValue={m.instructions ?? ''}

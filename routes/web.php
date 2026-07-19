@@ -30,8 +30,9 @@ Route::post('/webhooks/xendit', [WebhookController::class, 'xendit'])->name('web
 
 // Auth-required pages
 Route::middleware(['auth', 'verified', EnsureTeamMembership::class])->group(function () {
-    // Bookings — unified page for customer + admin
+    // Booking flow and order history are separated to keep each page focused.
     Route::get('/bookings', [BookingPageController::class, 'index'])->name('bookings');
+    Route::get('/orders', [BookingPageController::class, 'orders'])->name('orders');
 
     // Booking CRUD — customer + admin (ownership/role check in controller)
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');

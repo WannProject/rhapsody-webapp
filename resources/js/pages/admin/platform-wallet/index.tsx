@@ -37,11 +37,24 @@ type WithdrawalItem = {
     destination: string;
     requestedBy: string | null;
     createdAt: string;
+    xenditPayoutId: string | null;
+    xenditReferenceId: string | null;
+    xenditPayoutStatus: string | null;
     failureReason: string | null;
+};
+type BalanceSnapshot = {
+    source: string;
+    status: string;
+    amount: number;
+    ledgerAmount: number;
+    currency: string;
+    message: string;
+    asOf: string;
 };
 
 type Props = {
     availableBalance: number;
+    balanceSnapshot: BalanceSnapshot;
     totalPlatformFee: number;
     pendingWithdrawals: number;
     totalWithdrawn: number;
@@ -153,6 +166,7 @@ function PaginationControls({
 
 export default function PlatformWalletIndex({
     availableBalance,
+    balanceSnapshot,
     totalPlatformFee,
     pendingWithdrawals,
     totalWithdrawn,
@@ -200,9 +214,16 @@ export default function PlatformWalletIndex({
                         </Button>
                     </header>
 
-                    <section className="grid gap-3 md:grid-cols-4">
+                    <section className="grid gap-3 md:grid-cols-5">
                         {[
-                            ['Available Balance', availableBalance, true],
+                            [
+                                balanceSnapshot.source === 'xendit_live'
+                                    ? 'Saldo Xendit Live'
+                                    : 'Saldo Ledger Internal',
+                                balanceSnapshot.amount,
+                                true,
+                            ],
+                            ['Ledger Available', availableBalance, false],
                             ['Total Platform Fee', totalPlatformFee, false],
                             ['Pending Withdrawal', pendingWithdrawals, false],
                             ['Total Withdrawn', totalWithdrawn, false],
@@ -219,6 +240,19 @@ export default function PlatformWalletIndex({
                                 </p>
                             </div>
                         ))}
+                        <div className="rounded-lg border border-border bg-card p-5 md:col-span-5">
+                            <p className="text-xs font-bold tracking-[0.22em] text-muted-foreground uppercase">
+                                Sumber Saldo
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-primary">
+                                {balanceSnapshot.message}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Status: {balanceSnapshot.status} · Currency:{' '}
+                                {balanceSnapshot.currency} · As of:{' '}
+                                {balanceSnapshot.asOf}
+                            </p>
+                        </div>
                     </section>
 
                     <section className="border-y border-border py-5">
@@ -407,7 +441,7 @@ export default function PlatformWalletIndex({
                         </div>
                         <div className="overflow-hidden rounded-lg border border-border">
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[900px] text-sm">
+                                <table className="w-full min-w-[1040px] text-sm">
                                     <thead className="bg-primary text-primary-foreground">
                                         <tr>
                                             <th className="px-4 py-3 text-left text-xs font-extrabold tracking-wider uppercase">
@@ -424,6 +458,9 @@ export default function PlatformWalletIndex({
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-extrabold tracking-wider uppercase">
                                                 Diajukan
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-extrabold tracking-wider uppercase">
+                                                Xendit
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-extrabold tracking-wider uppercase"></th>
                                         </tr>
@@ -450,6 +487,23 @@ export default function PlatformWalletIndex({
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground">
                                                     {w.createdAt}
+                                                </td>
+                                                <td className="px-4 py-3 text-xs text-muted-foreground">
+                                                    <p>
+                                                        Ref:{' '}
+                                                        {w.xenditReferenceId ??
+                                                            '-'}
+                                                    </p>
+                                                    <p>
+                                                        Payout:{' '}
+                                                        {w.xenditPayoutId ??
+                                                            '-'}
+                                                    </p>
+                                                    <p>
+                                                        Status:{' '}
+                                                        {w.xenditPayoutStatus ??
+                                                            '-'}
+                                                    </p>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {![
@@ -482,7 +536,7 @@ export default function PlatformWalletIndex({
                                         {withdrawals.length === 0 && (
                                             <tr>
                                                 <td
-                                                    colSpan={6}
+                                                    colSpan={7}
                                                     className="px-4 py-8 text-center text-muted-foreground"
                                                 >
                                                     Belum ada withdrawal

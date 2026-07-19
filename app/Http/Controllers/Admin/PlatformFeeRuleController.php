@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePlatformFeeRuleRequest;
+use App\Models\Client;
 use App\Models\PlatformFeeRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,14 @@ class PlatformFeeRuleController extends Controller
             ->withQueryString();
 
         return Inertia::render('admin/platform-fees/index', [
+            'clients' => Client::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'business_name'])
+                ->map(fn (Client $client) => [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'businessName' => $client->business_name,
+                ]),
             'feeRules' => $rules->through(fn (PlatformFeeRule $rule) => [
                 'id' => $rule->id,
                 'clientName' => $rule->client?->name ?? 'Global (Semua Client)',

@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,25 @@ const statusOptions = [
 ];
 
 export default function ClientsIndex({ clients, filters }: Props) {
+    const updateStatusFilter = (status: string) => {
+        router.get(
+            '/admin/clients',
+            status === 'all' ? {} : { status },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+    const pageUrl = (page: number) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (filters.status) {
+            params.set('status', filters.status);
+        }
+
+        return `/admin/clients?${params.toString()}`;
+    };
+
     return (
         <>
             <Head title="RHAPSODY | Clients" />
@@ -113,7 +132,11 @@ export default function ClientsIndex({ clients, filters }: Props) {
 
                     <section className="grid gap-4">
                         <div className="flex items-center gap-3">
-                            <Select name="status_filter" defaultValue={filters.status ?? 'all'}>
+                            <Select
+                                name="status_filter"
+                                value={filters.status ?? 'all'}
+                                onValueChange={updateStatusFilter}
+                            >
                                 <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Filter status" />
                                 </SelectTrigger>
@@ -165,12 +188,16 @@ export default function ClientsIndex({ clients, filters }: Props) {
                                         )}
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        <a
-                                            href={`/admin/clients/${c.id}`}
-                                            className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm font-semibold text-primary hover:bg-muted"
+                                        <Button
+                                            variant="outline"
+                                            asChild
                                         >
-                                            Detail
-                                        </a>
+                                            <Link
+                                                href={`/admin/clients/${c.id}`}
+                                            >
+                                                Detail
+                                            </Link>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -188,17 +215,20 @@ export default function ClientsIndex({ clients, filters }: Props) {
                     {clients.last_page > 1 && (
                         <div className="flex items-center justify-center gap-2">
                             {Array.from({ length: clients.last_page }, (_, i) => i + 1).map((page) => (
-                                <a
+                                <Button
                                     key={page}
-                                    href={`/admin/clients?page=${page}`}
-                                    className={`rounded-md px-3 py-1 text-sm font-semibold ${
+                                    size="sm"
+                                    variant={
                                         page === clients.current_page
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'border border-border hover:bg-muted'
-                                    }`}
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    asChild
                                 >
-                                    {page}
-                                </a>
+                                    <Link href={pageUrl(page)}>
+                                        {page}
+                                    </Link>
+                                </Button>
                             ))}
                         </div>
                     )}

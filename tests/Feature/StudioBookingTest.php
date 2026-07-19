@@ -13,9 +13,11 @@ use App\Models\User;
 use App\Services\BookingSchedule;
 use App\Services\PaymentService;
 use App\Services\XenditClient;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class StudioBookingTest extends TestCase
@@ -56,7 +58,7 @@ class StudioBookingTest extends TestCase
             'ends_at' => '11:00',
             'total_price' => 300000,
             'status' => BookingStatus::Pending->value,
-            'payment_status' => PaymentStatus::Unpaid->value,
+            'payment_status' => PaymentStatus::Pending->value,
         ]);
         $this->assertNotNull($booking->held_until);
         $this->assertTrue($booking->held_until->greaterThan(now()));
@@ -75,7 +77,7 @@ class StudioBookingTest extends TestCase
                 'customer_phone' => '628129999999',
                 'notes' => 'Gitar take',
             ])
-            ->assertRedirect(route('bookings', ['date' => $updatedBookingDate]));
+            ->assertRedirect(route('orders'));
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
@@ -87,12 +89,12 @@ class StudioBookingTest extends TestCase
         $this
             ->actingAs($user)
             ->delete(route('bookings.destroy', $booking->fresh()))
-            ->assertRedirect(route('bookings', ['date' => $updatedBookingDate]));
+            ->assertRedirect(route('orders'));
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
             'status' => BookingStatus::Cancelled->value,
-            'payment_status' => PaymentStatus::Cancelled->value,
+            'payment_status' => PaymentStatus::Pending->value,
         ]);
     }
 
@@ -131,6 +133,43 @@ class StudioBookingTest extends TestCase
 
         $response->assertRedirect(route('home'));
         $response->assertSessionHasErrors('starts_at');
+    }
+
+    public function test_database_rejects_duplicate_active_booking_slot(): void
+    {
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $date = now()->addDay()->toDateString();
+
+        $this->booking($firstUser, $paymentMethod, $date);
+
+        $this->expectException(QueryException::class);
+
+        $this->booking($secondUser, $paymentMethod, $date);
+    }
+
+    public function test_database_allows_reusing_terminal_booking_slots(): void
+    {
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $date = now()->addDay()->toDateString();
+
+        $booking = $this->booking($firstUser, $paymentMethod, $date);
+        $booking->update([
+            'status' => BookingStatus::Expired,
+            'payment_status' => PaymentStatus::Expired,
+            'held_until' => null,
+        ]);
+
+        $this->booking($secondUser, $paymentMethod, $date);
+
+        $this->assertDatabaseCount('bookings', 2);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'active_slot_key' => null,
+        ]);
     }
 
     public function test_customer_booking_creates_xendit_invoice_and_redirects_to_payment_url(): void
@@ -287,7 +326,7 @@ class StudioBookingTest extends TestCase
             $booking->update([
                 'status' => $status,
                 'payment_status' => match ($status) {
-                    BookingStatus::Cancelled => PaymentStatus::Cancelled,
+                    BookingStatus::Cancelled => PaymentStatus::Pending,
                     BookingStatus::Refunded => PaymentStatus::Refunded,
                     default => PaymentStatus::Expired,
                 },
@@ -311,25 +350,200 @@ class StudioBookingTest extends TestCase
             ->actingAs($admin)
             ->patch(route('bookings.status', $booking), [
                 'status' => BookingStatus::Confirmed->value,
-                'payment_status' => PaymentStatus::Paid->value,
                 'admin_notes' => 'Pembayaran valid',
             ])
-            ->assertRedirect(route('bookings', ['date' => $booking->booking_date->toDateString()]));
+            ->assertRedirect(route('orders'));
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
             'status' => BookingStatus::Confirmed->value,
-            'payment_status' => PaymentStatus::Paid->value,
+            'payment_status' => PaymentStatus::Pending->value,
             'admin_notes' => 'Pembayaran valid',
         ]);
 
         $this
             ->actingAs($admin)
             ->delete(route('bookings.destroy', $booking->fresh()))
-            ->assertRedirect(route('bookings', ['date' => $booking->booking_date->toDateString()]));
+            ->assertRedirect(route('orders'));
 
         $this->assertDatabaseMissing('bookings', [
             'id' => $booking->id,
+        ]);
+    }
+
+    public function test_superadmin_bookings_page_filters_by_sop_fields(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+        $matchUser = User::factory()->create([
+            'band_name' => 'Orion Keys',
+            'contact_name' => 'Rani',
+        ]);
+        $otherUser = User::factory()->create([
+            'band_name' => 'Loud Sunday',
+            'contact_name' => 'Bima',
+        ]);
+        $paymentMethod = $this->paymentMethod();
+        $date = now()->addDays(6)->toDateString();
+
+        $match = Booking::query()->create([
+            'user_id' => $matchUser->id,
+            'payment_method_id' => $paymentMethod->id,
+            'customer_name' => $matchUser->name,
+            'customer_email' => $matchUser->email,
+            'customer_phone' => $matchUser->phone,
+            'booking_date' => $date,
+            'starts_at' => '09:00',
+            'ends_at' => '11:00',
+            'total_price' => 300000,
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+
+        Booking::query()->create([
+            'user_id' => $otherUser->id,
+            'payment_method_id' => $paymentMethod->id,
+            'customer_name' => $otherUser->name,
+            'customer_email' => $otherUser->email,
+            'customer_phone' => $otherUser->phone,
+            'booking_date' => $date,
+            'starts_at' => '13:00',
+            'ends_at' => '15:00',
+            'total_price' => 300000,
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+
+        $this->withoutVite();
+
+        $this
+            ->actingAs($superAdmin)
+            ->get(route('orders', [
+                'filter_date' => $date,
+                'band' => 'Orion',
+                'status' => BookingStatus::Confirmed->value,
+                'payment_status' => PaymentStatus::Paid->value,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('bookings/index')
+                ->where('pageMode', 'orders')
+                ->has('bookings', 1)
+                ->where('bookings.0.code', $match->code)
+                ->where('bookings.0.bandName', 'Orion Keys')
+                ->where('filters.filter_date', $date)
+                ->where('filters.band', 'Orion')
+                ->where('filters.status', BookingStatus::Confirmed->value)
+                ->where('filters.payment_status', PaymentStatus::Paid->value));
+    }
+
+    public function test_admin_can_mark_paid_booking_completed(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($customer, $paymentMethod);
+        $booking->update([
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+
+        $this
+            ->actingAs($admin)
+            ->patch(route('bookings.status', $booking), [
+                'status' => BookingStatus::Completed->value,
+                'admin_notes' => 'Sesi selesai',
+            ])
+            ->assertRedirect(route('orders'));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => BookingStatus::Completed->value,
+            'payment_status' => PaymentStatus::Paid->value,
+            'admin_notes' => 'Sesi selesai',
+        ]);
+    }
+
+    public function test_admin_status_route_does_not_change_payment_status(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($customer, $paymentMethod);
+
+        $this
+            ->actingAs($admin)
+            ->patch(route('bookings.status', $booking), [
+                'status' => BookingStatus::Confirmed->value,
+                'payment_status' => PaymentStatus::Paid->value,
+            ])
+            ->assertRedirect(route('orders'));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => BookingStatus::Confirmed->value,
+            'payment_status' => PaymentStatus::Pending->value,
+        ]);
+    }
+
+    public function test_admin_cancellation_and_refund_flow_respects_payment_rules(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $pendingPaymentBooking = $this->booking($customer, $paymentMethod, now()->addDays(2)->toDateString());
+        $paidBooking = $this->booking($customer, $paymentMethod, now()->addDays(3)->toDateString());
+        $refundedBooking = $this->booking($customer, $paymentMethod, now()->addDays(4)->toDateString());
+
+        $paidBooking->update([
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+        $refundedBooking->update([
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Refunded,
+        ]);
+
+        $this
+            ->actingAs($admin)
+            ->patch(route('bookings.status', $pendingPaymentBooking), [
+                'status' => BookingStatus::Cancelled->value,
+                'admin_notes' => 'Customer batal sebelum bayar',
+            ])
+            ->assertRedirect(route('orders'));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $pendingPaymentBooking->id,
+            'status' => BookingStatus::Cancelled->value,
+            'payment_status' => PaymentStatus::Pending->value,
+            'admin_notes' => 'Customer batal sebelum bayar',
+        ]);
+
+        $this
+            ->actingAs($admin)
+            ->from(route('orders'))
+            ->patch(route('bookings.status', $paidBooking), [
+                'status' => BookingStatus::Cancelled->value,
+            ])
+            ->assertRedirect(route('orders'))
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $paidBooking->id,
+            'status' => BookingStatus::Confirmed->value,
+            'payment_status' => PaymentStatus::Paid->value,
+        ]);
+
+        $this
+            ->actingAs($admin)
+            ->patch(route('bookings.status', $refundedBooking), [
+                'status' => BookingStatus::Refunded->value,
+            ])
+            ->assertRedirect(route('orders'));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $refundedBooking->id,
+            'status' => BookingStatus::Refunded->value,
+            'payment_status' => PaymentStatus::Refunded->value,
         ]);
     }
 
@@ -359,7 +573,7 @@ class StudioBookingTest extends TestCase
                 'is_active' => '1',
                 'sort_order' => 2,
             ])
-            ->assertRedirect(route('bookings'));
+            ->assertRedirect(route('orders'));
 
         $paymentMethod = PaymentMethod::query()->firstOrFail();
 
@@ -379,7 +593,7 @@ class StudioBookingTest extends TestCase
                 'instructions' => 'Transfer lalu kirim bukti.',
                 'sort_order' => 1,
             ])
-            ->assertRedirect(route('bookings'));
+            ->assertRedirect(route('orders'));
 
         $this->assertDatabaseHas('payment_methods', [
             'id' => $paymentMethod->id,
@@ -392,7 +606,7 @@ class StudioBookingTest extends TestCase
         $this
             ->actingAs($admin)
             ->delete(route('payment-methods.destroy', $paymentMethod))
-            ->assertRedirect(route('bookings'));
+            ->assertRedirect(route('orders'));
 
         $this->assertDatabaseMissing('payment_methods', [
             'id' => $paymentMethod->id,
@@ -434,6 +648,61 @@ class StudioBookingTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_customer_can_view_own_booking_detail_only(): void
+    {
+        $owner = User::factory()->create([
+            'band_name' => 'The Rhapsody',
+            'contact_name' => 'Dina',
+        ]);
+        $intruder = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $booking = $this->booking($owner, $paymentMethod);
+
+        $this->withoutVite();
+
+        $this
+            ->actingAs($owner)
+            ->get(route('bookings.show', $booking))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('bookings/show')
+                ->where('booking.code', $booking->code)
+                ->where('booking.bandName', 'The Rhapsody')
+                ->where('booking.contactName', 'Dina')
+                ->where('isAdmin', false));
+
+        $this
+            ->actingAs($intruder)
+            ->get(route('bookings.show', $booking))
+            ->assertForbidden();
+    }
+
+    public function test_customer_bookings_page_splits_active_and_history_orders(): void
+    {
+        $user = User::factory()->create();
+        $paymentMethod = $this->paymentMethod();
+        $active = $this->booking($user, $paymentMethod, now()->addDay()->toDateString());
+        $history = $this->booking($user, $paymentMethod, now()->addDays(2)->toDateString());
+
+        $history->update([
+            'status' => BookingStatus::Expired,
+            'payment_status' => PaymentStatus::Expired,
+            'held_until' => null,
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('orders'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('bookings/index')
+                ->where('pageMode', 'orders')
+                ->has('activeBookings', 1)
+                ->where('activeBookings.0.code', $active->code)
+                ->has('historyBookings', 1)
+                ->where('historyBookings.0.code', $history->code));
+    }
+
     public function test_customer_update_checks_slot_collision(): void
     {
         $firstUser = User::factory()->create();
@@ -452,20 +721,32 @@ class StudioBookingTest extends TestCase
             'ends_at' => '11:00',
             'total_price' => 300000,
             'status' => BookingStatus::Confirmed,
-            'payment_status' => PaymentStatus::Unpaid,
+            'payment_status' => PaymentStatus::Pending,
         ]);
 
-        $booking = $this->booking($secondUser, $paymentMethod, $date);
+        $booking = Booking::query()->create([
+            'user_id' => $secondUser->id,
+            'payment_method_id' => $paymentMethod->id,
+            'customer_name' => $secondUser->name,
+            'customer_email' => $secondUser->email,
+            'customer_phone' => $secondUser->phone,
+            'booking_date' => $date,
+            'starts_at' => '13:00',
+            'ends_at' => '15:00',
+            'total_price' => 300000,
+            'status' => BookingStatus::Pending,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
 
         $this
             ->actingAs($secondUser)
-            ->from(route('bookings'))
+            ->from(route('orders'))
             ->patch(route('bookings.update', $booking), [
                 'booking_date' => $date,
                 'starts_at' => '10:00',
                 'payment_method_id' => $paymentMethod->id,
             ])
-            ->assertRedirect(route('bookings'))
+            ->assertRedirect(route('orders'))
             ->assertSessionHasErrors('starts_at');
     }
 
@@ -497,7 +778,7 @@ class StudioBookingTest extends TestCase
             ->actingAs($admin)
             ->patch(route('bookings.status', $booking), [
                 'status' => BookingStatus::Confirmed->value,
-                'payment_status' => PaymentStatus::Unpaid->value,
+                'payment_status' => PaymentStatus::Pending->value,
             ])
             ->assertRedirect();
 
@@ -533,7 +814,7 @@ class StudioBookingTest extends TestCase
             'ends_at' => '11:00',
             'total_price' => 300000,
             'status' => BookingStatus::Pending,
-            'payment_status' => PaymentStatus::Unpaid,
+            'payment_status' => PaymentStatus::Pending,
         ]);
     }
 }

@@ -150,7 +150,7 @@ class StudioDataManagementTest extends TestCase
             'ends_at' => '11:00',
             'total_price' => 300000,
             'status' => BookingStatus::Pending,
-            'payment_status' => PaymentStatus::Unpaid,
+            'payment_status' => PaymentStatus::Pending,
         ]);
 
         $this

@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,9 +51,9 @@ export default function ClientShow({ client: c }: Props) {
                 <div className="mx-auto grid max-w-5xl gap-10">
                     <header className="grid gap-3">
                         <div className="flex items-center gap-2">
-                            <a href="/admin/clients" className="text-sm text-muted-foreground hover:text-primary">
-                                ← Kembali
-                            </a>
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href="/admin/clients">Kembali</Link>
+                            </Button>
                         </div>
                         <h1 className="font-display text-[40px] leading-[1.05] font-extrabold tracking-tight text-primary md:text-[48px]">
                             {c.name}

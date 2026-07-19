@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { ArrowRight, Clock3, SlidersHorizontal } from 'lucide-react';
 import RhapsodyLayout from '@/layouts/rhapsody-layout';
 
@@ -16,7 +16,7 @@ type ScheduleProps = {
         endsAt: string;
         available: boolean;
         price: string;
-        label: string;
+        statusLabel: string;
         booking?: { customerName: string };
     }>;
     paymentMethods: Array<{
@@ -50,18 +50,9 @@ export default function SchedulePage() {
                                 {studio.closesAt}
                             </p>
                         </div>
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) =>
-                                router.get(
-                                    '/schedule',
-                                    { date: e.target.value },
-                                    { preserveScroll: true },
-                                )
-                            }
-                            className="h-10 rounded-lg border border-border bg-card px-4 text-sm text-foreground focus:border-primary focus:outline-none"
-                        />
+                        <div className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-primary">
+                            {selectedDate}
+                        </div>
                     </div>
 
                     <section className="overflow-hidden rounded-lg border border-border">
@@ -90,7 +81,7 @@ export default function SchedulePage() {
                                                     {slot.time}
                                                 </p>
                                                 <p className="mt-1 text-xs font-bold tracking-[0.16em] text-muted-foreground uppercase">
-                                                    {slot.label}
+                                                    {slot.statusLabel}
                                                 </p>
                                             </div>
                                             <Clock3 className="size-5 text-muted-foreground" />
@@ -128,9 +119,10 @@ export default function SchedulePage() {
                         </div>
                         <a
                             href="/bookings"
-                            className="inline-flex rounded-md bg-primary px-5 py-3 text-sm font-extrabold tracking-wide text-primary-foreground transition hover:opacity-90"
+                            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-extrabold tracking-wide text-primary-foreground transition hover:opacity-90"
                         >
                             Booking Sekarang
+                            <ArrowRight className="size-4" />
                         </a>
                     </div>
                 </div>

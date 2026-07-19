@@ -7,6 +7,9 @@ use App\Models\PlatformWalletLedgerEntry;
 use App\Models\PlatformWithdrawal;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
+use Throwable;
 
 class PlatformWalletService
 {
@@ -60,6 +63,51 @@ class PlatformWalletService
             ->sum('amount');
     }
 
+    /**
+     * @return array{source: string, status: string, amount: int, ledgerAmount: int, currency: string, message: string, asOf: string}
+     */
+    public function balanceSnapshot(): array
+    {
+        $ledgerAmount = $this->availableBalance();
+
+        if (! $this->xendit->isConfigured()) {
+            return $this->ledgerBalanceSnapshot(
+                $ledgerAmount,
+                'Saldo Xendit live belum aktif karena secret key belum dikonfigurasi.',
+                'not_configured',
+            );
+        }
+
+        try {
+            $response = $this->xendit->getBalance();
+            $amount = $this->extractBalanceAmount($response);
+
+            if ($amount === null) {
+                throw new RuntimeException('Respons saldo Xendit tidak memuat nominal yang dikenali.');
+            }
+
+            return [
+                'source' => 'xendit_live',
+                'status' => 'available',
+                'amount' => $amount,
+                'ledgerAmount' => $ledgerAmount,
+                'currency' => (string) ($response['currency'] ?? 'IDR'),
+                'message' => 'Saldo live dari Xendit.',
+                'asOf' => now()->toDateTimeString(),
+            ];
+        } catch (Throwable $e) {
+            Log::warning('platform-wallet:xendit-balance-unavailable', [
+                'reason' => $e->getMessage(),
+            ]);
+
+            return $this->ledgerBalanceSnapshot(
+                $ledgerAmount,
+                'Saldo Xendit live tidak tersedia, memakai ledger internal.',
+                'unavailable',
+            );
+        }
+    }
+
     public function requestWithdrawal(User $user, int $amount, array $destination): PlatformWithdrawal
     {
         $minAmount = (int) config('xendit.withdrawal.min_amount', 50000);
@@ -96,11 +144,17 @@ class PlatformWalletService
             return;
         }
 
-        $withdrawal->update(['status' => WithdrawalStatus::Processing, 'processed_at' => now()]);
+        $referenceId = 'withdrawal-'.$withdrawal->id;
+
+        $withdrawal->update([
+            'status' => WithdrawalStatus::Processing,
+            'processed_at' => now(),
+            'xendit_reference_id' => $referenceId,
+        ]);
 
         try {
             $response = $this->xendit->createPayout([
-                'reference_id' => 'withdrawal-'.$withdrawal->id,
+                'reference_id' => $referenceId,
                 'channel_code' => 'ID_BANK',
                 'amount' => $withdrawal->amount,
                 'currency' => 'IDR',
@@ -113,11 +167,14 @@ class PlatformWalletService
 
             $withdrawal->update([
                 'xendit_payout_id' => $response['id'] ?? null,
+                'xendit_reference_id' => $referenceId,
+                'xendit_payout_status' => $response['status'] ?? null,
             ]);
         } catch (\Exception $e) {
             $withdrawal->update([
                 'status' => WithdrawalStatus::Failed,
                 'failure_reason' => $e->getMessage(),
+                'failed_at' => now(),
             ]);
 
             PlatformWalletLedgerEntry::where('platform_withdrawal_id', $withdrawal->id)->delete();
@@ -129,6 +186,7 @@ class PlatformWalletService
         $withdrawal->update([
             'status' => WithdrawalStatus::Succeeded,
             'succeeded_at' => now(),
+            'failed_at' => null,
         ]);
     }
 
@@ -137,8 +195,89 @@ class PlatformWalletService
         $withdrawal->update([
             'status' => WithdrawalStatus::Failed,
             'failure_reason' => $reason,
+            'failed_at' => now(),
         ]);
 
         PlatformWalletLedgerEntry::where('platform_withdrawal_id', $withdrawal->id)->delete();
+    }
+
+    public function syncWithdrawalFromPayoutWebhook(array $payload): ?PlatformWithdrawal
+    {
+        $payoutId = $payload['id'] ?? $payload['payout_id'] ?? null;
+        $referenceId = $payload['reference_id'] ?? null;
+
+        if (! $payoutId && ! $referenceId) {
+            return null;
+        }
+
+        $withdrawal = PlatformWithdrawal::query()
+            ->where(function ($query) use ($payoutId, $referenceId) {
+                if ($payoutId) {
+                    $query->where('xendit_payout_id', $payoutId);
+                }
+
+                if ($referenceId) {
+                    $method = $payoutId ? 'orWhere' : 'where';
+                    $query->{$method}('xendit_reference_id', $referenceId);
+                }
+            })
+            ->first();
+
+        if (! $withdrawal) {
+            return null;
+        }
+
+        $xenditStatus = strtoupper((string) ($payload['status'] ?? ''));
+        $failureReason = (string) ($payload['failure_reason'] ?? $payload['failure_code'] ?? 'Payout failed');
+
+        $withdrawal->forceFill([
+            'xendit_payout_id' => $payoutId ?: $withdrawal->xendit_payout_id,
+            'xendit_reference_id' => $referenceId ?: $withdrawal->xendit_reference_id,
+            'xendit_payout_status' => $xenditStatus ?: $withdrawal->xendit_payout_status,
+        ])->save();
+
+        if (in_array($xenditStatus, ['SUCCEEDED', 'SUCCESS', 'COMPLETED'], true)) {
+            $this->completeWithdrawal($withdrawal);
+        }
+
+        if (in_array($xenditStatus, ['FAILED', 'CANCELLED', 'CANCELED', 'REJECTED'], true)) {
+            $this->failWithdrawal($withdrawal, $failureReason);
+        }
+
+        return $withdrawal->fresh();
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function extractBalanceAmount(array $response): ?int
+    {
+        foreach (['balance', 'available_balance', 'available', 'amount'] as $key) {
+            if (isset($response[$key]) && is_numeric($response[$key])) {
+                return (int) $response[$key];
+            }
+        }
+
+        if (isset($response['data']) && is_array($response['data'])) {
+            return $this->extractBalanceAmount($response['data']);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{source: string, status: string, amount: int, ledgerAmount: int, currency: string, message: string, asOf: string}
+     */
+    private function ledgerBalanceSnapshot(int $ledgerAmount, string $message, string $status): array
+    {
+        return [
+            'source' => 'ledger_internal',
+            'status' => $status,
+            'amount' => $ledgerAmount,
+            'ledgerAmount' => $ledgerAmount,
+            'currency' => 'IDR',
+            'message' => $message,
+            'asOf' => now()->toDateTimeString(),
+        ];
     }
 }

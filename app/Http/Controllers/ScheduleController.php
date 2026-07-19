@@ -5,15 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\PaymentMethod;
 use App\Models\StudioSetting;
 use App\Services\BookingSchedule;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ScheduleController extends Controller
 {
-    public function index(Request $request, BookingSchedule $schedule): Response
+    public function index(Request $request, BookingSchedule $schedule): Response|RedirectResponse
     {
-        $selectedDate = $request->query('date', now()->toDateString());
+        $today = now()->toDateString();
+        $selectedDate = $request->query('date', $today);
+
+        if ($selectedDate !== $today) {
+            return to_route('schedule');
+        }
+
         $studio = StudioSetting::active();
 
         return Inertia::render('schedule/index', [

@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\BookingStatus;
 use App\Enums\PaymentMethodType;
-use App\Enums\PaymentStatus;
 use App\Models\Booking;
 use App\Models\Equipment;
 use App\Models\PaymentMethod;
@@ -158,10 +156,11 @@ class BookingEquipmentTest extends TestCase
             ])
             ->assertRedirect();
 
-        $response = $this->actingAs($user)->get(route('bookings'));
+        $response = $this->actingAs($user)->get(route('orders'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
+            ->where('pageMode', 'orders')
             ->has('bookings.0.equipments', 1)
             ->where('bookings.0.equipments.0.name', $guitar->name)
             ->where('bookings.0.equipments.0.quantity', 1)

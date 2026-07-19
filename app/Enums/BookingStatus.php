@@ -4,7 +4,7 @@ namespace App\Enums;
 
 enum BookingStatus: string
 {
-    case Pending = 'pending';
+    case Pending = 'pending_payment';
     case Confirmed = 'confirmed';
     case Cancelled = 'cancelled';
     case Completed = 'completed';
@@ -14,7 +14,7 @@ enum BookingStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Menunggu Konfirmasi',
+            self::Pending => 'Menunggu Pembayaran',
             self::Confirmed => 'Terkonfirmasi',
             self::Cancelled => 'Dibatalkan',
             self::Completed => 'Selesai',

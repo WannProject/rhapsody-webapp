@@ -10,10 +10,10 @@ use App\Models\StudioSetting;
 use App\Models\User;
 use App\Services\FonnteClient;
 use App\Services\PaymentService;
-use App\Services\XenditClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Mockery;
 use Tests\TestCase;
 
@@ -114,6 +114,7 @@ class NotificationLogTest extends TestCase
     public function test_superadmin_can_view_notification_logs(): void
     {
         $superAdmin = User::factory()->superAdmin()->create();
+        $this->withoutVite();
 
         NotificationLog::query()->create([
             'channel' => 'whatsapp',
@@ -157,6 +158,7 @@ class NotificationLogTest extends TestCase
     public function test_notification_logs_can_be_filtered_by_status(): void
     {
         $superAdmin = User::factory()->superAdmin()->create();
+        $this->withoutVite();
 
         NotificationLog::query()->create([
             'channel' => 'whatsapp',
@@ -205,12 +207,12 @@ class NotificationLogTest extends TestCase
             'base_price' => 300000,
             'additional_price' => 0,
             'total_price' => 300000,
-            'status' => 'pending',
-            'payment_status' => 'unpaid',
+            'status' => 'pending_payment',
+            'payment_status' => 'pending',
         ]);
 
         $booking->payment()->create([
-            'xendit_external_id' => 'test-ext-'.\Illuminate\Support\Str::random(8),
+            'xendit_external_id' => 'test-ext-'.Str::random(8),
             'amount' => $booking->total_price,
             'platform_fee_expected' => 0,
             'status' => 'pending',

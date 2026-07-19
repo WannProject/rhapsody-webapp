@@ -185,8 +185,8 @@ class PaymentService
                 'amount' => $booking->total_price,
                 'payer_email' => $booking->customer_email,
                 'description' => "Booking {$booking->code} - {$booking->booking_date->format('d M Y')}",
-                'success_redirect_url' => route('bookings').'?payment=success',
-                'failure_redirect_url' => route('bookings').'?payment=failed',
+                'success_redirect_url' => route('orders').'?payment=success',
+                'failure_redirect_url' => route('orders').'?payment=failed',
                 ...$splitConfig,
             ];
 
