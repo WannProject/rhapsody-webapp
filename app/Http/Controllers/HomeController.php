@@ -102,7 +102,7 @@ class HomeController extends Controller
                 'userRole' => $user->role->value,
             ]);
 
-            if ($user->isSuperAdmin()) {
+            if ($user->isAdmin()) {
                 $props['adminStats'] = [
                     'totalBookings' => Booking::query()->count(),
                     'pendingBookings' => Booking::query()->where('status', BookingStatus::Pending->value)->count(),

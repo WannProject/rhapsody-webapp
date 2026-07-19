@@ -14,6 +14,7 @@ export type RhapsodyView =
     | 'clients'
     | 'platform-fees'
     | 'platform-wallet'
+    | 'platform-withdrawals'
     | 'notification-logs'
     | 'profile'
     | 'appearance'

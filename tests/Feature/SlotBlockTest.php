@@ -39,24 +39,37 @@ class SlotBlockTest extends TestCase
         $this->assertSame(1, SlotBlock::query()->whereDate('booking_date', $date)->count());
     }
 
-    public function test_admin_customer_and_guest_cannot_create_slot_block(): void
+    public function test_admin_can_block_slot_but_customer_and_guest_cannot(): void
     {
-        $date = now()->addDay()->toDateString();
-        $payload = ['booking_date' => $date, 'starts_at' => '09:00'];
-
-        $this->post(route('admin.slot-blocks.store'), $payload)
-            ->assertRedirect(route('login'));
-
         $admin = User::factory()->admin()->create();
-        $this->actingAs($admin)->post(route('admin.slot-blocks.store'), $payload)
-            ->assertForbidden();
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($admin)
+            ->post(route('admin.slot-blocks.store'), [
+                'booking_date' => $date,
+                'starts_at' => '13:00',
+                'reason' => 'Maintenance mingguan',
+            ])
+            ->assertRedirect(route('bookings', ['date' => $date]));
+
+        $this->assertDatabaseHas('slot_blocks', [
+            'starts_at' => '13:00',
+            'ends_at' => '15:00',
+            'created_by' => $admin->id,
+        ]);
 
         $customer = User::factory()->create();
-        $this->actingAs($customer)->post(route('admin.slot-blocks.store'), $payload)
+        $this->actingAs($customer)
+            ->post(route('admin.slot-blocks.store'), [
+                'booking_date' => $date,
+                'starts_at' => '15:00',
+            ])
             ->assertForbidden();
 
-        $this->assertDatabaseMissing('slot_blocks', ['created_by' => $user->id ?? 0]);
-        $this->assertSame(0, SlotBlock::query()->whereDate('booking_date', $date)->count());
+        $this->post(route('admin.slot-blocks.store'), [
+            'booking_date' => $date,
+            'starts_at' => '17:00',
+        ])->assertRedirect(route('login'));
     }
 
     public function test_blocked_slot_shows_as_blocked_in_schedule(): void
