@@ -1,46 +1,59 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { BrandMark } from '@/components/rhapsody/brand-mark';
+import { Button } from '@/components/ui/button';
+import { useCurrentUrl } from '@/hooks/use-current-url';
 import { navItems } from '@/lib/rhapsody-data';
 import { UserRole } from '@/types/user-role';
 import type { Auth } from '@/types';
+import { LogOut } from 'lucide-react';
 
 export function RhapsodySidebar() {
-    const { props, url } = usePage<{ auth: Auth }>();
+    const { props } = usePage<{ auth: Auth }>();
+    const { currentUrl, isCurrentOrParentUrl } = useCurrentUrl();
     const isAuth = !!props.auth.user;
-    const isAdminRole =
-        props.auth.user?.role === UserRole.Admin ||
-        props.auth.user?.role === UserRole.SuperAdmin;
+    const role = props.auth.user?.role;
     const visibleItems = navItems.filter((item) => {
-        if (
-            item.superAdminRequired &&
-            (!isAuth || props.auth.user?.role !== UserRole.SuperAdmin)
-        ) {
-return false;
-}
+        if (!isAuth) {
+            return item.audience === 'guest';
+        }
 
-        if (item.adminRequired && (!isAuth || !isAdminRole)) {
-return false;
-}
+        if (role === UserRole.SuperAdmin) {
+            return ['admin', 'super_admin'].includes(item.audience ?? '');
+        }
 
-        if (item.authRequired && !isAuth) {
-return false;
-}
+        if (role === UserRole.Admin) {
+            return item.audience === 'admin';
+        }
 
-        return true;
+        return item.audience === 'customer';
     });
 
     return (
         <aside className="sticky top-0 hidden h-screen w-[280px] shrink-0 flex-col border-r border-border bg-background px-6 py-7 lg:flex">
-            <BrandMark />
-            {isAuth ? <UpcomingBookingCard /> : null}
+            <Link
+                href="/"
+                className="inline-flex rounded-md bg-primary px-3 py-3 text-primary-foreground"
+            >
+                <BrandMark />
+            </Link>
+            {isAuth ? (
+                <AccountSummary
+                    name={props.auth.user?.name ?? 'User'}
+                    role={role ?? UserRole.Customer}
+                />
+            ) : null}
             <nav className="mt-8 space-y-2">
-                {visibleItems.map((item) => {
+                {visibleItems.map((item, index) => {
                     const Icon = item.icon;
-                    const isActive = url === item.href;
+                    const itemPath = item.href.split('#')[0].split('?')[0];
+                    const isActive =
+                        itemPath === '/'
+                            ? currentUrl === '/'
+                            : isCurrentOrParentUrl(itemPath);
 
                     return (
                         <Link
-                            key={item.view}
+                            key={`${item.audience}-${item.view}-${index}`}
                             href={item.href}
                             className={[
                                 'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm font-bold tracking-wide transition',
@@ -55,20 +68,37 @@ return false;
                     );
                 })}
             </nav>
-            {isAuth ? <SessionStatusCard /> : null}
+            {isAuth ? (
+                <div className="mt-auto grid gap-3">
+                    <SessionStatusCard />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => router.post('/logout')}
+                    >
+                        <LogOut className="size-4" />
+                        Logout
+                    </Button>
+                </div>
+            ) : null}
         </aside>
     );
 }
 
-function UpcomingBookingCard() {
+function AccountSummary({ name, role }: { name: string; role: string }) {
     return (
         <div className="mt-10 rounded-lg border border-border bg-muted p-4">
-            <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-                Booking Terdekat
-            </p>
             <p className="mt-2 font-display text-xl leading-snug font-bold text-primary">
-                Studio A, Besok 14:00 - 16:00
+                {name}
             </p>
+            {/* <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                {role === UserRole.SuperAdmin
+                    ? 'Superadmin'
+                    : role === UserRole.Admin
+                      ? 'Admin'
+                      : 'Customer'}
+            </p> */}
         </div>
     );
 }

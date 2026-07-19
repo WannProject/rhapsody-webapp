@@ -23,7 +23,14 @@ type FeeRuleItem = {
     xenditSplitRuleId: string | null;
 };
 
+type ClientOption = {
+    id: number;
+    name: string;
+    businessName: string | null;
+};
+
 type Props = {
+    clients: ClientOption[];
     feeRules: {
         data: FeeRuleItem[];
         current_page: number;
@@ -38,7 +45,7 @@ const feeTypes = [
     ['hybrid', 'Hybrid'],
 ];
 
-export default function PlatformFeesIndex({ feeRules }: Props) {
+export default function PlatformFeesIndex({ clients, feeRules }: Props) {
     return (
         <>
             <Head title="RHAPSODY | Platform Fees" />
@@ -59,11 +66,35 @@ export default function PlatformFeesIndex({ feeRules }: Props) {
                     <Form
                         action="/admin/platform-fees"
                         method="post"
-                        className="grid gap-4 rounded-lg border border-border bg-card p-5 md:grid-cols-4"
+                        className="grid gap-4 rounded-lg border border-border bg-card p-5 md:grid-cols-6"
                         resetOnSuccess
                     >
                         {({ processing, errors }) => (
                             <>
+                                <div className="grid gap-2 md:col-span-2">
+                                    <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                                        Client
+                                    </Label>
+                                    <Select name="client_id">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Global semua client" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {clients.map((client) => (
+                                                <SelectItem
+                                                    key={client.id}
+                                                    value={String(client.id)}
+                                                >
+                                                    {client.name}
+                                                    {client.businessName
+                                                        ? ` - ${client.businessName}`
+                                                        : ''}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.client_id} />
+                                </div>
                                 <div className="grid gap-2">
                                     <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">Type</Label>
                                     <Select name="fee_type" required>

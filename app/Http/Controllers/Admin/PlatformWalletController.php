@@ -39,6 +39,7 @@ class PlatformWalletController extends Controller
 
         return Inertia::render('admin/platform-wallet/index', [
             'availableBalance' => $wallet->availableBalance(),
+            'balanceSnapshot' => $wallet->balanceSnapshot(),
             'totalPlatformFee' => $wallet->totalPlatformFee(),
             'pendingWithdrawals' => $wallet->pendingWithdrawals(),
             'totalWithdrawn' => $wallet->totalWithdrawn(),
@@ -59,6 +60,9 @@ class PlatformWalletController extends Controller
                 'destination' => trim(($w->destination_bank_code ?? '').' '.$w->destination_account_holder.' '.$w->destination_account_number),
                 'requestedBy' => $w->requester?->name,
                 'createdAt' => $w->created_at->toDateTimeString(),
+                'xenditPayoutId' => $w->xendit_payout_id,
+                'xenditReferenceId' => $w->xendit_reference_id,
+                'xenditPayoutStatus' => $w->xendit_payout_status,
                 'failureReason' => $w->failure_reason,
             ])->items(),
             'ledgerPagination' => [

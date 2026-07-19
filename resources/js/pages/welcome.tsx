@@ -4,30 +4,39 @@ import { HomeScreen } from '@/pages/rhapsody/home-screen';
 import type { Auth } from '@/types';
 
 type WelcomeProps = {
-    selectedDate?: string;
-    studio?: { name: string; opensAt: string; closesAt: string; slotDurationMinutes: number; hourlyRate: number };
+    studio?: {
+        name: string;
+        opensAt: string;
+        closesAt: string;
+        slotDurationMinutes: number;
+        hourlyRate: number;
+    };
     scheduleSlots?: Array<{
-        time: string; endsAt: string; available: boolean;
-        price: string; label: string;
-        booking?: { customerName: string };
-    }>;
-    paymentMethods?: Array<{
-        id: number; type: string; typeLabel: string;
-        name: string; instructions: string | null;
-        isActive: boolean; sortOrder: number;
+        time: string;
+        endsAt: string;
+        available: boolean;
+        price: string;
+        statusLabel?: string;
     }>;
     bookings?: Array<{
-        code: string; customerName: string; customerEmail: string;
-        customerPhone: string | null; bookingDate: string;
-        startsAt: string; endsAt: string; totalPrice: number;
-        status: string; statusLabel: string;
-        paymentStatus: string; paymentStatusLabel: string;
-        paymentMethodId: number | null; paymentMethodName: string | null;
+        code: string;
+        customerName: string;
+        bookingDate: string;
+        startsAt: string;
+        endsAt: string;
+        totalPrice: number;
+        status: string;
+        statusLabel: string;
+        paymentStatus: string;
+        paymentStatusLabel: string;
         notes: string | null;
     }>;
-    stats?: { totalBookings: number; pendingBookings: number; confirmedBookings: number; paidBookings: number };
-    isAuthenticated?: boolean;
-    userRole?: string;
+    stats?: {
+        totalBookings: number;
+        pendingBookings: number;
+        confirmedBookings: number;
+        paidBookings: number;
+    };
     auth: Auth;
 };
 
@@ -38,10 +47,7 @@ export default function Welcome() {
         <>
             <Head title="RHAPSODY | Music Booking System" />
             <RhapsodyLayout>
-                <HomeScreen
-                    onViewChange={() => {}}
-                    serverProps={props}
-                />
+                <HomeScreen serverProps={props} />
             </RhapsodyLayout>
         </>
     );

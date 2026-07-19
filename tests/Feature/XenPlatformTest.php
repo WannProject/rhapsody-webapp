@@ -60,6 +60,34 @@ class XenPlatformTest extends TestCase
             ->assertOk();
     }
 
+    public function test_platform_wallet_shows_xendit_live_balance_when_available(): void
+    {
+        config()->set('xendit.secret_key', 'xnd_test_secret');
+        Http::fake([
+            'https://api.xendit.co/balance' => Http::response([
+                'balance' => 765000,
+                'currency' => 'IDR',
+            ]),
+        ]);
+
+        PlatformWalletLedgerEntry::query()->create([
+            'type' => 'credit',
+            'amount' => 125000,
+            'description' => 'Ledger credit',
+        ]);
+
+        $this
+            ->actingAs(User::factory()->superAdmin()->create())
+            ->get(route('admin.platform-wallet.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/platform-wallet/index')
+                ->where('balanceSnapshot.source', 'xendit_live')
+                ->where('balanceSnapshot.amount', 765000)
+                ->where('balanceSnapshot.ledgerAmount', 125000)
+                ->where('availableBalance', 125000));
+    }
+
     public function test_xenplatform_schema_contains_required_tables_and_columns(): void
     {
         $tables = [
@@ -68,7 +96,7 @@ class XenPlatformTest extends TestCase
             'platform_fee_rules' => ['client_id', 'fee_type', 'percent', 'flat_amount'],
             'payments' => ['booking_id', 'client_id', 'status', 'split_status', 'paid_notification_sent_at'],
             'platform_wallet_ledger_entries' => ['payment_id', 'platform_withdrawal_id', 'type', 'amount'],
-            'platform_withdrawals' => ['requested_by', 'amount', 'status'],
+            'platform_withdrawals' => ['requested_by', 'amount', 'status', 'xendit_reference_id', 'xendit_payout_status', 'failed_at'],
         ];
 
         foreach ($tables as $table => $columns) {
@@ -497,6 +525,123 @@ class XenPlatformTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_process_withdrawal_saves_xendit_reference_and_status(): void
+    {
+        config()->set('xendit.secret_key', 'xnd_test_secret');
+
+        Http::fake([
+            'https://api.xendit.co/payouts' => Http::response([
+                'id' => 'payout-123',
+                'status' => 'ACCEPTED',
+            ]),
+        ]);
+
+        $wallet = app(PlatformWalletService::class);
+        $withdrawal = PlatformWithdrawal::query()->create([
+            'requested_by' => User::factory()->superAdmin()->create()->id,
+            'amount' => 100000,
+            'currency' => 'IDR',
+            'status' => WithdrawalStatus::Pending,
+        ]);
+
+        $wallet->processWithdrawal($withdrawal);
+
+        $withdrawal->refresh();
+
+        $this->assertEquals(WithdrawalStatus::Processing, $withdrawal->status);
+        $this->assertEquals('payout-123', $withdrawal->xendit_payout_id);
+        $this->assertEquals('withdrawal-'.$withdrawal->id, $withdrawal->xendit_reference_id);
+        $this->assertEquals('ACCEPTED', $withdrawal->xendit_payout_status);
+    }
+
+    public function test_payout_success_webhook_marks_withdrawal_succeeded(): void
+    {
+        config()->set('xendit.callback_verification_token', 'test-token');
+
+        $withdrawal = PlatformWithdrawal::query()->create([
+            'requested_by' => User::factory()->superAdmin()->create()->id,
+            'amount' => 100000,
+            'currency' => 'IDR',
+            'status' => WithdrawalStatus::Processing,
+            'xendit_payout_id' => 'payout-123',
+            'xendit_reference_id' => 'withdrawal-123',
+        ]);
+
+        PlatformWalletLedgerEntry::query()->create([
+            'platform_withdrawal_id' => $withdrawal->id,
+            'type' => 'debit',
+            'amount' => 100000,
+            'description' => 'Withdrawal request',
+        ]);
+
+        $this
+            ->withHeaders(['X-CALLBACK-TOKEN' => 'test-token'])
+            ->postJson(route('webhooks.xendit'), [
+                'event' => 'payout.succeeded',
+                'data' => [
+                    'id' => 'payout-123',
+                    'reference_id' => 'withdrawal-123',
+                    'status' => 'SUCCEEDED',
+                ],
+            ])
+            ->assertOk();
+
+        $withdrawal->refresh();
+
+        $this->assertEquals(WithdrawalStatus::Succeeded, $withdrawal->status);
+        $this->assertEquals('SUCCEEDED', $withdrawal->xendit_payout_status);
+        $this->assertNotNull($withdrawal->succeeded_at);
+        $this->assertDatabaseHas('platform_wallet_ledger_entries', [
+            'platform_withdrawal_id' => $withdrawal->id,
+            'type' => 'debit',
+            'amount' => 100000,
+        ]);
+    }
+
+    public function test_payout_failed_webhook_marks_withdrawal_failed_and_restores_ledger(): void
+    {
+        config()->set('xendit.callback_verification_token', 'test-token');
+
+        $withdrawal = PlatformWithdrawal::query()->create([
+            'requested_by' => User::factory()->superAdmin()->create()->id,
+            'amount' => 100000,
+            'currency' => 'IDR',
+            'status' => WithdrawalStatus::Processing,
+            'xendit_payout_id' => 'payout-456',
+            'xendit_reference_id' => 'withdrawal-456',
+        ]);
+
+        PlatformWalletLedgerEntry::query()->create([
+            'platform_withdrawal_id' => $withdrawal->id,
+            'type' => 'debit',
+            'amount' => 100000,
+            'description' => 'Withdrawal request',
+        ]);
+
+        $this
+            ->withHeaders(['X-CALLBACK-TOKEN' => 'test-token'])
+            ->postJson(route('webhooks.xendit'), [
+                'event' => 'payout.failed',
+                'data' => [
+                    'id' => 'payout-456',
+                    'reference_id' => 'withdrawal-456',
+                    'status' => 'FAILED',
+                    'failure_reason' => 'Invalid account',
+                ],
+            ])
+            ->assertOk();
+
+        $withdrawal->refresh();
+
+        $this->assertEquals(WithdrawalStatus::Failed, $withdrawal->status);
+        $this->assertEquals('FAILED', $withdrawal->xendit_payout_status);
+        $this->assertEquals('Invalid account', $withdrawal->failure_reason);
+        $this->assertNotNull($withdrawal->failed_at);
+        $this->assertDatabaseMissing('platform_wallet_ledger_entries', [
+            'platform_withdrawal_id' => $withdrawal->id,
+        ]);
+    }
+
     public function test_ledger_available_balance_calculation(): void
     {
         PlatformWalletLedgerEntry::create([
@@ -577,7 +722,7 @@ class XenPlatformTest extends TestCase
             'ends_at' => '11:00',
             'total_price' => 300000,
             'status' => BookingStatus::Pending,
-            'payment_status' => PaymentStatus::Unpaid,
+            'payment_status' => PaymentStatus::Pending,
         ]);
 
         Payment::create([

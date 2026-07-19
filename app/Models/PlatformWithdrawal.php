@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\WithdrawalStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,19 +17,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $currency
  * @property WithdrawalStatus $status
  * @property string|null $xendit_payout_id
+ * @property string|null $xendit_reference_id
+ * @property string|null $xendit_payout_status
  * @property string|null $destination_bank_code
  * @property string|null $destination_account_holder
  * @property string|null $destination_account_number
  * @property string|null $failure_reason
- * @property \Illuminate\Support\Carbon|null $processed_at
- * @property \Illuminate\Support\Carbon|null $succeeded_at
+ * @property Carbon|null $processed_at
+ * @property Carbon|null $succeeded_at
+ * @property Carbon|null $failed_at
  * @property-read User $requester
- * @property-read \Illuminate\Database\Eloquent\Collection<int, PlatformWalletLedgerEntry> $ledgerEntries
+ * @property-read Collection<int, PlatformWalletLedgerEntry> $ledgerEntries
  */
 #[Fillable([
-    'requested_by', 'amount', 'currency', 'status', 'xendit_payout_id',
+    'requested_by', 'amount', 'currency', 'status', 'xendit_payout_id', 'xendit_reference_id', 'xendit_payout_status',
     'destination_bank_code', 'destination_account_holder', 'destination_account_number',
-    'failure_reason', 'processed_at', 'succeeded_at',
+    'failure_reason', 'processed_at', 'succeeded_at', 'failed_at',
 ])]
 class PlatformWithdrawal extends Model
 {
@@ -63,6 +68,7 @@ class PlatformWithdrawal extends Model
             'status' => WithdrawalStatus::class,
             'processed_at' => 'datetime',
             'succeeded_at' => 'datetime',
+            'failed_at' => 'datetime',
         ];
     }
 }

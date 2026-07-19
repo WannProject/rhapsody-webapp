@@ -5,6 +5,7 @@ export type RhapsodyView =
     | 'schedule'
     | 'booking'
     | 'bookings'
+    | 'info-orders'
     | 'payment'
     | 'success'
     | 'admin'
@@ -12,7 +13,11 @@ export type RhapsodyView =
     | 'studio-data'
     | 'clients'
     | 'platform-fees'
-    | 'platform-wallet';
+    | 'platform-wallet'
+    | 'notification-logs'
+    | 'profile'
+    | 'appearance'
+    | 'security';
 
 export type Studio = {
     id: string;
@@ -37,9 +42,8 @@ export type NavItem = {
     label: string;
     icon: LucideIcon;
     href: string;
-    authRequired?: boolean;
-    adminRequired?: boolean;
-    superAdminRequired?: boolean;
+    audience?: 'guest' | 'customer' | 'admin' | 'super_admin';
+    bottomNav?: boolean;
 };
 
 export type Instrument = {

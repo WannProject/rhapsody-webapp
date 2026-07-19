@@ -26,37 +26,42 @@ export type UseCurrentUrlReturn = {
     whenCurrentUrl: WhenCurrentUrlFn;
 };
 
+const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+
+const pathFromUrl = (url: string): string => {
+    try {
+        return new URL(url, baseUrl).pathname;
+    } catch {
+        return url.split('#')[0].split('?')[0] || '/';
+    }
+};
+
 export function useCurrentUrl(): UseCurrentUrlReturn {
     const page = usePage();
-    const currentUrlPath = new URL(
-        page.url,
-        typeof window !== 'undefined'
-            ? window.location.origin
-            : 'http://localhost',
-    ).pathname;
+    const currentUrlPath = pathFromUrl(page.url);
 
     const isCurrentUrl: IsCurrentUrlFn = (
         urlToCheck: NonNullable<InertiaLinkProps['href']>,
         currentUrl?: string,
         startsWith: boolean = false,
     ) => {
-        const urlToCompare = currentUrl ?? currentUrlPath;
-        const urlString = toUrl(urlToCheck);
+        const urlToCompare = currentUrl
+            ? pathFromUrl(currentUrl)
+            : currentUrlPath;
+        const pathToCheck = pathFromUrl(toUrl(urlToCheck));
 
-        const comparePath = (path: string): boolean =>
-            startsWith ? urlToCompare.startsWith(path) : path === urlToCompare;
+        const comparePath = (path: string): boolean => {
+            if (!startsWith) {
+                return path === urlToCompare;
+            }
 
-        if (!urlString.startsWith('http')) {
-            return comparePath(urlString);
-        }
+            return path === '/'
+                ? urlToCompare === '/'
+                : urlToCompare === path || urlToCompare.startsWith(`${path}/`);
+        };
 
-        try {
-            const absoluteUrl = new URL(urlString);
-
-            return comparePath(absoluteUrl.pathname);
-        } catch {
-            return false;
-        }
+        return comparePath(pathToCheck);
     };
 
     const isCurrentOrParentUrl: IsCurrentOrParentUrlFn = (

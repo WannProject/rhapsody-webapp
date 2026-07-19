@@ -28,6 +28,7 @@ use Illuminate\Support\Str;
  * @property Carbon $booking_date
  * @property string $starts_at
  * @property string $ends_at
+ * @property string|null $active_slot_key
  * @property int $base_price
  * @property int $additional_price
  * @property int $total_price
@@ -80,6 +81,10 @@ class Booking extends Model
             if (empty($booking->code)) {
                 $booking->code = 'RHP-'.now()->format('ymd').'-'.Str::upper(Str::random(5));
             }
+        });
+
+        static::saving(function (Booking $booking) {
+            $booking->active_slot_key = $booking->buildActiveSlotKey();
         });
     }
 
@@ -154,6 +159,30 @@ class Booking extends Model
     public function canBeChangedBy(User $user): bool
     {
         return $user->isAdmin() || ($this->isOwnedBy($user) && $this->status === BookingStatus::Pending);
+    }
+
+    public function buildActiveSlotKey(): ?string
+    {
+        if (! $this->booking_date || ! $this->starts_at || ! $this->ends_at) {
+            return null;
+        }
+
+        $status = $this->status instanceof BookingStatus
+            ? $this->status
+            : BookingStatus::tryFrom((string) $this->status);
+
+        if ($status?->isTerminal()) {
+            return null;
+        }
+
+        if ($status === BookingStatus::Pending && $this->held_until && $this->held_until->lt(now())) {
+            return null;
+        }
+
+        $date = Carbon::parse($this->booking_date)->toDateString();
+        $startsAt = Carbon::parse($this->starts_at)->format('H:i');
+
+        return "{$date}|{$startsAt}";
     }
 
     /**

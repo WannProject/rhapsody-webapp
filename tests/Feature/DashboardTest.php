@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\TeamRole;
 use App\Models\Team;
-use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -20,6 +19,20 @@ class DashboardTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
+    public function test_public_schedule_redirects_date_query_to_today()
+    {
+        $response = $this->get(route('schedule', ['date' => now()->addDay()->toDateString()]));
+
+        $response->assertRedirect(route('schedule'));
+    }
+
+    public function test_public_home_redirects_date_query_to_today()
+    {
+        $response = $this->get(route('home', ['date' => now()->addDay()->toDateString()]));
+
+        $response->assertRedirect(route('home'));
+    }
+
     public function test_authenticated_users_can_visit_the_bookings_page()
     {
         $user = User::factory()->create();
@@ -31,8 +44,7 @@ class DashboardTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('bookings/index')
-            ->has('bookings')
-            ->has('stats')
+            ->where('pageMode', 'booking')
             ->has('scheduleSlots')
             ->has('paymentMethods'),
         );
@@ -49,11 +61,12 @@ class DashboardTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('bookings/index')
+            ->where('pageMode', 'booking')
             ->where('isAdmin', false),
         );
     }
 
-    public function test_admin_sees_all_bookings()
+    public function test_admin_sees_all_orders()
     {
         $admin = User::factory()->admin()->create();
         $customer = User::factory()->create();
@@ -63,11 +76,12 @@ class DashboardTest extends TestCase
 
         $response = $this
             ->actingAs($admin)
-            ->get(route('bookings'));
+            ->get(route('orders'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('bookings/index')
+            ->where('pageMode', 'orders')
             ->where('isAdmin', true),
         );
     }
@@ -81,7 +95,7 @@ class DashboardTest extends TestCase
 
         $response = $this
             ->actingAs($admin)
-            ->get(route('bookings'));
+            ->get(route('orders'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page

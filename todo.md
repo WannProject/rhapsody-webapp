@@ -3,7 +3,7 @@
 Dokumen ini diperbarui dari audit SOP "Aplikasi Penyewaan Studio Musik" terhadap codebase saat ini.
 
 Status verifikasi terakhir:
-- `php artisan test`: lulus, 156 tests / 599 assertions.
+- `php artisan test`: lulus, 187 tests / 795 assertions.
 - `npm run build`: lulus.
 - `npx tsc --noEmit`: lulus.
 - Codebase sudah di-index ke `.codebase-memory/graph.db.zst`.
@@ -50,7 +50,7 @@ Status verifikasi terakhir:
 - [x] Slot `held` harus tampil sebagai tidak tersedia untuk customer lain.
 - [x] Slot dilepas otomatis saat payment expired atau hold melewati batas.
 - [x] Tambahkan locking/transaksi yang benar saat membuat booking.
-- [ ] Tambahkan proteksi database terhadap double booking untuk slot aktif.
+- [x] Tambahkan proteksi database terhadap double booking untuk slot aktif.
 - [x] Tambahkan test simulasi dua customer memilih slot sama.
 - [x] Pastikan status cancelled/expired/refunded tidak memblokir slot aktif.
 
@@ -112,79 +112,80 @@ Status verifikasi terakhir:
   - [x] Durasi minimum booking.
   - [x] Jam operasional.
   - [x] Status aktif.
-- [ ] Simpan snapshot `base_price`, `additional_price`, dan `total_price` pada booking.
-- [ ] Pertimbangkan tabel `time_slots` eksplisit jika slot hold/booked/blocked ingin dikelola per tanggal.
-- [ ] Tambahkan status slot:
-  - [ ] `available`.
-  - [ ] `held`.
-  - [ ] `booked`.
-  - [ ] `blocked`.
-- [ ] Tambahkan fitur superadmin untuk block slot tertentu.
+- [x] Simpan snapshot `base_price`, `additional_price`, dan `total_price` pada booking.
+- [x] Pertimbangkan tabel `time_slots` eksplisit jika slot hold/booked/blocked ingin dikelola per tanggal.
+- [x] Tambahkan status slot:
+  - [x] `available`.
+  - [x] `held`.
+  - [x] `booked`.
+  - [x] `blocked`.
+- [x] Tambahkan fitur superadmin untuk block slot tertentu.
 
 ### 8. Notification history
 
-- [ ] Buat tabel/model `Notification` atau struktur audit notifikasi.
-- [ ] Simpan channel, recipient, title, message, status, dan sent_at.
-- [ ] Catat notifikasi WhatsApp payment success ke superadmin.
-- [ ] Catat notifikasi payment success ke customer jika channel sudah ditentukan.
-- [ ] Tambahkan retry/error state untuk notifikasi gagal.
+- [x] Buat tabel/model `Notification` atau struktur audit notifikasi.
+- [x] Simpan channel, recipient, title, message, status, dan sent_at.
+- [x] Catat notifikasi WhatsApp payment success ke superadmin.
+- [x] Catat notifikasi payment success ke customer jika channel sudah ditentukan.
+- [x] Tambahkan retry/error state untuk notifikasi gagal.
 
 ## Prioritas P1 - UI dan Alur Customer
 
 ### 9. Booking customer sesuai SOP
 
-- [ ] Booking page harus memandu urutan:
-  - [ ] Pilih tanggal.
-  - [ ] Pilih jam tersedia.
-  - [ ] Slot ditahan sementara.
-  - [ ] Pilih alat.
-  - [ ] Isi alat tambahan sendiri.
-  - [ ] Lihat ringkasan pesanan.
-  - [ ] Lanjutkan pembayaran.
-- [ ] Slot harus menampilkan status:
-  - [ ] Tersedia.
-  - [ ] Ditahan sementara.
-  - [ ] Sudah dibooking.
-- [ ] Customer dashboard dapat melihat tanggal berikutnya.
-- [ ] Landing/schedule publik hanya menampilkan jadwal hari ini.
-- [ ] Jika public schedule menerima query date, batasi atau redirect ke hari ini.
-- [ ] Customer harus login sebelum memilih jadwal dari landing/schedule.
+- [x] Booking page harus memandu urutan:
+  - [x] Pilih tanggal.
+  - [x] Pilih jam tersedia.
+  - [x] Slot ditahan sementara.
+  - [x] Pilih alat.
+  - [x] Isi alat tambahan sendiri.
+  - [x] Lihat ringkasan pesanan.
+  - [x] Lanjutkan pembayaran.
+- [x] Slot harus menampilkan status:
+  - [x] Tersedia.
+  - [x] Ditahan sementara.
+  - [x] Sudah dibooking.
+- [x] Customer dashboard dapat melihat tanggal berikutnya.
+- [x] Landing/schedule publik hanya menampilkan jadwal hari ini.
+- [x] Jika public schedule menerima query date, batasi atau redirect ke hari ini.
+- [x] Customer harus login sebelum memilih jadwal dari landing/schedule.
+- [x] Pisahkan halaman Booking dan Info Pesanan agar halaman tidak terlalu panjang.
 
 ### 10. Info pesanan dan riwayat booking
 
-- [ ] Buat/tajamkan halaman "Info Pesanan" customer.
-- [ ] Pisahkan pesanan aktif dan riwayat pesanan.
-- [ ] Tampilkan detail pesanan:
-  - [ ] Booking code.
-  - [ ] Data customer.
-  - [ ] Tanggal dan jam.
-  - [ ] Durasi.
-  - [ ] Daftar alat.
-  - [ ] Total pembayaran.
-  - [ ] Status booking.
-  - [ ] Status pembayaran.
-  - [ ] Link payment jika masih pending.
-- [ ] Customer hanya bisa melihat pesanan miliknya.
+- [x] Buat/tajamkan halaman "Info Pesanan" customer.
+- [x] Pisahkan pesanan aktif dan riwayat pesanan.
+- [x] Tampilkan detail pesanan:
+  - [x] Booking code.
+  - [x] Data customer.
+  - [x] Tanggal dan jam.
+  - [x] Durasi.
+  - [x] Daftar alat.
+  - [x] Total pembayaran.
+  - [x] Status booking.
+  - [x] Status pembayaran.
+  - [x] Link payment jika masih pending.
+- [x] Customer hanya bisa melihat pesanan miliknya.
 
 ## Prioritas P1 - UI dan Alur Superadmin
 
 ### 11. Pengelolaan pesanan superadmin
 
-- [ ] Pastikan menu "Info Pesanan" superadmin menampilkan seluruh pesanan.
-- [ ] Tambahkan filter SOP:
-  - [ ] Tanggal.
-  - [ ] Nama Band.
-  - [ ] Status booking.
-  - [ ] Status pembayaran.
-- [ ] Tambahkan detail pesanan admin lengkap:
-  - [ ] Data customer.
-  - [ ] Jadwal.
-  - [ ] Daftar alat.
-  - [ ] Total pembayaran.
-  - [ ] Status pembayaran.
-- [ ] Superadmin bisa mengubah status booking ke `completed`.
-- [ ] Batasi perubahan status payment agar tidak bertentangan dengan webhook Xendit.
-- [ ] Tambahkan flow pembatalan/refund sesuai aturan studio.
+- [x] Pastikan menu "Info Pesanan" superadmin menampilkan seluruh pesanan.
+- [x] Tambahkan filter SOP:
+  - [x] Tanggal.
+  - [x] Nama Band.
+  - [x] Status booking.
+  - [x] Status pembayaran.
+- [x] Tambahkan detail pesanan admin lengkap:
+  - [x] Data customer.
+  - [x] Jadwal.
+  - [x] Daftar alat.
+  - [x] Total pembayaran.
+  - [x] Status pembayaran.
+- [x] Superadmin bisa mengubah status booking ke `completed`.
+- [x] Batasi perubahan status payment agar tidak bertentangan dengan webhook Xendit.
+- [x] Tambahkan flow pembatalan/refund sesuai aturan studio.
 
 ### 12. Halaman "Ubah Data"
 
@@ -217,71 +218,71 @@ Status verifikasi terakhir:
 - [x] Withdrawal request dasar sudah ada.
 - [x] Validasi minimum withdrawal sudah ada.
 - [x] Validasi saldo tidak cukup sudah ada.
-- [ ] Tampilkan saldo Xendit live sesuai SOP, atau tulis keputusan eksplisit bahwa saldo memakai ledger internal.
-- [ ] Jika memakai saldo Xendit live, hubungkan `XenditClient::getBalance()` ke wallet page.
-- [ ] Tambahkan webhook/rekonsiliasi payout success/failed.
-- [ ] Simpan riwayat penarikan dengan reference id Xendit.
-- [ ] Tampilkan status pencairan dari Xendit jika tersedia.
-- [ ] Tambahkan test payout webhook success/failed.
+- [x] Tampilkan saldo Xendit live sesuai SOP, atau tulis keputusan eksplisit bahwa saldo memakai ledger internal.
+- [x] Jika memakai saldo Xendit live, hubungkan `XenditClient::getBalance()` ke wallet page.
+- [x] Tambahkan webhook/rekonsiliasi payout success/failed.
+- [x] Simpan riwayat penarikan dengan reference id Xendit.
+- [x] Tampilkan status pencairan dari Xendit jika tersedia.
+- [x] Tambahkan test payout webhook success/failed.
 
 ## Prioritas P2 - Status dan Konsistensi Bahasa Domain
 
 ### 14. Selaraskan status SOP
 
-- [ ] Booking status perlu selaras dengan SOP:
-  - [ ] `pending_payment`.
-  - [ ] `confirmed`.
-  - [ ] `completed`.
-  - [ ] `cancelled`.
-  - [ ] `expired`.
-  - [ ] `refunded`.
-- [ ] Payment status perlu selaras dengan SOP:
-  - [ ] `pending`.
-  - [ ] `paid`.
-  - [ ] `failed`.
-  - [ ] `expired`.
-  - [ ] `refunded`.
-- [ ] Slot status perlu tersedia:
-  - [ ] `available`.
-  - [ ] `held`.
-  - [ ] `booked`.
-  - [ ] `blocked`.
-- [ ] Buat migration/backfill jika enum/value database berubah.
-- [ ] Update label UI bahasa Indonesia.
-- [ ] Update tests yang masih memakai status lama seperti `unpaid` atau `pending`.
+- [x] Booking status perlu selaras dengan SOP:
+  - [x] `pending_payment`.
+  - [x] `confirmed`.
+  - [x] `completed`.
+  - [x] `cancelled`.
+  - [x] `expired`.
+  - [x] `refunded`.
+- [x] Payment status perlu selaras dengan SOP:
+  - [x] `pending`.
+  - [x] `paid`.
+  - [x] `failed`.
+  - [x] `expired`.
+  - [x] `refunded`.
+- [x] Slot status perlu tersedia:
+  - [x] `available`.
+  - [x] `held`.
+  - [x] `booked`.
+  - [x] `blocked`.
+- [x] Update migration awal development untuk enum/value database yang berubah.
+- [x] Update label UI bahasa Indonesia.
+- [x] Update tests yang masih memakai status lama seperti `unpaid` atau `pending`.
 
 ### 15. Rapikan sitemap dan navbar
 
-- [ ] Landing navbar:
-  - [ ] Home.
-  - [ ] Schedule.
-  - [ ] Login.
-- [ ] Landing home:
-  - [ ] Logo studio.
-  - [ ] Slider iklan/promosi.
-  - [ ] Tombol Register.
-  - [ ] Tombol Login.
-  - [ ] Informasi singkat studio.
-  - [ ] Harga studio.
-  - [ ] Fasilitas.
-  - [ ] Lokasi dan kontak.
-- [ ] Customer dashboard navbar:
-  - [ ] Beranda.
-  - [ ] Booking.
-  - [ ] Info Pesanan.
-  - [ ] Profil.
-  - [ ] Pengaturan.
-  - [ ] Ubah Password.
-  - [ ] Logout.
-- [ ] Superadmin navbar:
-  - [ ] Beranda.
-  - [ ] Info Pesanan.
-  - [ ] Ubah Data.
-  - [ ] Tarik Dana.
-  - [ ] Profil.
-  - [ ] Pengaturan.
-  - [ ] Ubah Password.
-  - [ ] Logout.
+- [x] Landing navbar:
+  - [x] Home.
+  - [x] Schedule.
+  - [x] Login.
+- [x] Landing home:
+  - [x] Logo studio.
+  - [x] Slider iklan/promosi.
+  - [x] Tombol Register.
+  - [x] Tombol Login.
+  - [x] Informasi singkat studio.
+  - [x] Harga studio.
+  - [x] Fasilitas.
+  - [x] Lokasi dan kontak.
+- [x] Customer dashboard navbar:
+  - [x] Beranda.
+  - [x] Booking.
+  - [x] Info Pesanan.
+  - [x] Profil.
+  - [x] Pengaturan.
+  - [x] Ubah Password.
+  - [x] Logout.
+- [x] Superadmin navbar:
+  - [x] Beranda.
+  - [x] Info Pesanan.
+  - [x] Ubah Data.
+  - [x] Tarik Dana.
+  - [x] Profil.
+  - [x] Pengaturan.
+  - [x] Ubah Password.
+  - [x] Logout.
 
 ## XenPlatform / Integrasi Xendit - Status Saat Ini
 
@@ -332,13 +333,13 @@ Status verifikasi terakhir:
 - [x] Feature test: webhook paid mengubah payment paid dan booking confirmed.
 - [x] Feature test: webhook expired mengubah booking expired dan melepas slot.
 - [x] Feature test: webhook paid tidak mengirim WA dobel.
-- [ ] Feature test: customer tidak bisa melihat booking user lain.
-- [ ] Feature test: superadmin bisa filter pesanan berdasarkan tanggal/nama band/status.
+- [x] Feature test: customer tidak bisa melihat booking user lain.
+- [x] Feature test: superadmin bisa filter pesanan berdasarkan tanggal/nama band/status.
 - [x] Feature test: superadmin update harga tidak mengubah booking lama.
 - [x] Feature test: withdrawal non-pending tidak diproses ulang.
 - [x] Unit test: total harga = base price + additional equipment price.
 - [x] Unit test: normalisasi nomor WhatsApp.
-- [ ] Unit test: slot availability mengabaikan cancelled/expired/refunded.
+- [x] Unit test: slot availability mengabaikan cancelled/expired/refunded.
 
 ## Deployment Checklist
 
