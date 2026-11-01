@@ -102,7 +102,7 @@ services:
     environment:
       SITE_HOST: ${SITE_HOST:?Isi SITE_HOST di .env (domain atau IP VPS)}
     volumes:
-      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
