@@ -19,6 +19,7 @@ type Props = {
     status?: string;
     canResetPassword: boolean;
     teamInvitation?: TeamInvitationContext | null;
+    adminCredentials?: { email: string; password: string } | null;
 };
 
 const demoCredentials = {
@@ -30,6 +31,7 @@ export default function Login({
     status,
     canResetPassword,
     teamInvitation,
+    adminCredentials,
 }: Props) {
     return (
         <>
@@ -68,6 +70,28 @@ export default function Login({
                                 </div>
                             </dl>
                         </div>
+
+                        {adminCredentials && (
+                            <div className="rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm">
+                                <div className="font-medium text-foreground">
+                                    Akun admin untuk mengelola aplikasi
+                                </div>
+                                <dl className="mt-3 grid gap-2 text-muted-foreground">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <dt>Email</dt>
+                                        <dd className="font-mono text-foreground">
+                                            {adminCredentials.email}
+                                        </dd>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <dt>Password</dt>
+                                        <dd className="font-mono text-foreground">
+                                            {adminCredentials.password}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        )}
 
                         <div className="grid gap-6">
                             <div className="grid gap-2">

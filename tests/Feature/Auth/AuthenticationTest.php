@@ -7,7 +7,6 @@ use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
@@ -43,6 +42,34 @@ class AuthenticationTest extends TestCase
             ->component('auth/login')
             ->where('teamInvitation.code', $invitation->code)
             ->where('teamInvitation.teamName', 'Laravel Team'),
+        );
+    }
+
+    public function test_login_screen_shows_admin_credentials_in_debug_mode()
+    {
+        config()->set('app.debug', true);
+
+        $response = $this->get(route('login'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('auth/login')
+            ->has('adminCredentials', fn (Assert $credentials) => $credentials
+                ->whereType('email', 'string')
+                ->whereType('password', 'string')),
+        );
+    }
+
+    public function test_login_screen_hides_admin_credentials_in_production_without_flag()
+    {
+        config()->set('app.debug', false);
+
+        $response = $this->get(route('login'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('auth/login')
+            ->where('adminCredentials', null),
         );
     }
 
