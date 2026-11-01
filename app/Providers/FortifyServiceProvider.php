@@ -85,6 +85,7 @@ class FortifyServiceProvider extends ServiceProvider
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
             'teamInvitation' => $this->teamInvitation($request),
+            'adminCredentials' => $this->adminCredentials(),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
@@ -133,6 +134,28 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+    }
+
+    /**
+     * Expose the seeded admin credentials to the login page when allowed.
+     *
+     * Visible in debug mode, or in production only when SHOW_ADMIN_CREDENTIALS
+     * is true. Values mirror the AdminUserSeeder defaults.
+     *
+     * @return array{email: string, password: string}|null
+     */
+    private function adminCredentials(): ?array
+    {
+        $showInProduction = filter_var(env('SHOW_ADMIN_CREDENTIALS', false), FILTER_VALIDATE_BOOLEAN);
+
+        if (! config('app.debug') && ! $showInProduction) {
+            return null;
+        }
+
+        return [
+            'email' => env('ADMIN_EMAIL', 'admin@rhapsody.test'),
+            'password' => env('ADMIN_PASSWORD', 'password'),
+        ];
     }
 
     /**
