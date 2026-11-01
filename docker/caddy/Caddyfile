@@ -1,0 +1,6 @@
+# Caddy otomatis menerbitkan + memperpanjang sertifikat HTTPS
+# untuk {$SITE_HOST} saat domain sudah mengarah ke VPS ini.
+# Kalau SITE_HOST masih IP, Caddy tetap jalan via HTTP biasa.
+{$SITE_HOST} {
+	reverse_proxy web:80
+}
